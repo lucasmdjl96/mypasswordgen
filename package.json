@@ -35,6 +35,7 @@
 	"dependencies": {
 		"@types/crypto-js": "^4.1.1",
 		"crypto-js": "^4.1.1",
+		"dexie": "^3.2.3",
 		"idb": "^7.1.1"
 	}
 }

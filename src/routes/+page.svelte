@@ -1,63 +1,102 @@
 <script lang="ts">
     import CryptoJS from "crypto-js"
-    import * as dao from "../dao"
+    import { liveQuery, type Observable } from "dexie"
+    import { db, type User, type Email, type Page, type WithID } from "../dao"
+    import { browser } from "$app/environment"
 
     function watch(_: unknown): void {}
 
     let username: string = "";
     let masterPassword: string = "";
-    let loggedIn: boolean = false;
-    let emails: Array<string> = [];
+    let user: WithID<User> | undefined;
+    $: loggedIn = user !== undefined;
+
     let emailText: string = "";
-    $: emailSelected = emails.includes(emailText) ? emailText : undefined;
+    $: emails = liveQuery(async () => {
+        if (!user || !browser) return [];
+        const emails = await db.emails.where("userID").equals(user.id).toArray();
+        return emails;
+    }) as Observable<Array<Email>>;
+    let emailSelected: WithID<Email> | undefined = undefined;
+    $: emails.subscribe((value) => {
+        const emailMatching = value.find((it) => it.emailAddress === emailText && it.id !== undefined) as WithID<Email> | undefined;
+        if (emailMatching) {
+            emailSelected = emailMatching;
+        }
+    });
     $: {
         watch(emailText);
         pageText = "";
         password = undefined;
     }
-    let pages: Array<string> = [];
+
+    $: pages = liveQuery(async () => {
+        if (!emailSelected || !browser) return [];
+        const pages = await db.pages.where("emailID").equals(emailSelected.id).toArray();
+        return pages;
+    });
     let pageText: string = "";
-    $: pageSelected = pages.includes(pageText) ? pageText : undefined;
+    let pageSelected: WithID<Page> | undefined = undefined;
+    $: pages.subscribe((value) => {
+        const pageMatching = value.find((it) => it.pageName === pageText && it.id !== undefined) as WithID<Page> | undefined;
+        if (pageMatching) {
+            pageSelected = pageMatching;
+        }    
+    });
     $: {
         watch(pageText);
         password = undefined;
     }
-    let keySize: number = 256/32;
-    let iterations: number = 10000;
+
+    let rawKeySize: number = 256;
+    $: keySize = rawKeySize/32;
+    let rawIterations: number = 0;
+    $: iterations = Math.floor(10000 * (50 ** rawIterations));
     let password: string | undefined = undefined;
 
-    function handleLogIn(): void {
-        loggedIn = true;
+    async function handleLogIn(): Promise<void> {
+        if (!username || !browser) return;
+        const result = await db.users.where("username").equals(username).toArray();
+        if (result.length === 0) return;
+        user = result[0] as WithID<User>
     }
 
-    function handleRegister(): void {
-        loggedIn = true;
+    async function handleRegister(): Promise<void> {
+        if (!username || !browser) return;
+        const result = await db.users.where("username").equals(username).toArray();
+        if (result.length > 0) return;
+        await db.users.add({
+            username: username
+        })
+        handleLogIn();
     }
 
     function handleRemoveEmail(): void {
-        if (emailSelected === undefined) return;
-        let index = emails.indexOf(emailSelected);
-        if (index != -1) {
-            emails.splice(index, 1);
-        }
+        if (!emailSelected || !browser) return;
+        db.emails.delete(emailSelected.id);
+        emailText = "";
     }
 
     function handleAddEmail(): void {
-        if (emailText === "") return;
-        emails = [...emails, emailText];
+        if (!user || !emailText || !browser) return;
+        db.emails.add({
+            emailAddress: emailText,
+            userID: user.id
+        })
     }
 
     function handleRemovePage(): void {
-        if (pageSelected === undefined) return;
-        let index = pages.indexOf(pageSelected);
-        if (index != -1) {
-            pages.splice(index, 1);
-        }
+        if (!pageSelected || !browser) return;
+        db.pages.delete(pageSelected.id);
+        pageText = "";
     }
 
     function handleAddPage(): void {
-        if (pageText === "") return;
-        pages = [...pages, pageText];
+        if (!emailSelected || !pageText || !browser) return;
+        db.pages.add({
+            pageName: pageText,
+            emailID: emailSelected.id
+        })
     }
 
     function computePassword(): void {
@@ -87,21 +126,29 @@ ${pageText}
     <button on:click={handleRemoveEmail}>-</button>
     <input bind:value={emailText} type="text" list="emailList"/>
     <datalist id="emailList">
-        {#each emails as email}
-            <option value={email}/>
-        {/each}
+        {#if $emails}
+            {#each $emails as email}
+                <option value={email.emailAddress}/>
+            {/each}
+        {/if}
     </datalist>
     <button on:click={handleAddEmail}>+</button>
     {#if emailSelected}
         <button on:click={handleRemovePage}>-</button>
         <input bind:value={pageText} type="text" list="pageList"/>
         <datalist id="pageList">
-            {#each pages as page}
-                <option value={page}/>
-            {/each}
+            {#if $pages}
+                {#each $pages as page}
+                    <option value={page.pageName}/>
+                {/each}
+            {/if}
         </datalist>
         <button on:click={handleAddPage}>+</button>
         {#if pageSelected}
+            <input type="range" min="0" max="1" step="0.01" bind:value={rawIterations}/>
+            iterations: {iterations}
+            <input type="range" min="32" max="512" step="32" bind:value={rawKeySize}/>
+            bit size: {rawKeySize}
             <button on:click={computePassword}>Generate</button>
             {#if password}
                 <p>{password}</p>
