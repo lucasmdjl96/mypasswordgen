@@ -419,7 +419,7 @@
                             <input type="file" on:change={handleImportFile} multiple={true} accept=".json,application/json" hidden={true} bind:this={fileInput}/>
                         </div>
                         <div>
-                            <button type="button" on:click={handleExportFile} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Download</button>
+                            <button type="button" on:click={handleExportFile} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" class:rounded-b-lg={!loggedIn}>Download</button>
                             <a hidden={true} download="my-password-gen.json" href={fileUrl} bind:this={exportFile}>Download</a>
                         </div>
                     </div>
