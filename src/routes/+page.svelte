@@ -1,7 +1,7 @@
 <script lang="ts">
     import { liveQuery, type Observable } from "dexie";
     import {  db } from "../dao"
-    import type { User, Email, Page, WithID, Key, Setting } from "../dao";
+    import type { User, Email, Page, WithID, Key, Setting as Settings } from "../dao";
     import { browser } from "$app/environment";
 	import { onMount, tick } from "svelte";
     import type { WorkerRequest, WorkerResponse } from "../lib/worker";
@@ -32,7 +32,7 @@
     let emailSelected: WithID<Email> | undefined = undefined;
     $: emails.subscribe((value) => {
         const emailMatching = value.find((it) => it.emailAddress === emailText && it.id !== undefined) as WithID<Email> | undefined;
-        if (emailMatching) {
+        if (emailMatching !== undefined) {
             emailSelected = emailMatching;
         } else {
             emailSelected = undefined;
@@ -53,7 +53,7 @@
     let pageSelected: WithID<Page> | undefined = undefined;
     $: pages.subscribe((value) => {
         const pageMatching = value.find((it) => it.pageName === pageText && it.id !== undefined) as WithID<Page> | undefined;
-        if (pageMatching) {
+        if (pageMatching !== undefined) {
             pageSelected = pageMatching;
         } else {
             pageSelected = undefined;
@@ -74,7 +74,7 @@
     const defaultRawIterations = 0;
     let rawIterations: number = defaultRawIterations;
     $: iterations = Math.floor(10000 * (100 ** rawIterations));
-    let settings: Observable<Setting | undefined> | undefined;
+    let settings: Observable<Settings | undefined> | undefined;
     let password: string | undefined = undefined;
     let generating: boolean = false;
 
@@ -154,7 +154,7 @@
     }
 
     function handleSaveSettings(): void {
-        if (!user) return;
+        if (user === undefined) return;
         db.settings.put({
             id: user.settingsID,
             charKeySize: charKeySize,
@@ -177,7 +177,7 @@
     }
 
     function handleCopy(): void {
-        if (password) navigator.clipboard.writeText(password);
+        if (password !== undefined) navigator.clipboard.writeText(password);
     }
 
     interface SessionState {
@@ -187,7 +187,7 @@
     interface UserState {
         readonly username: string,
         readonly emails: Array<EmailState>,
-        readonly settings: Setting
+        readonly settings: Settings
     }
 
     interface EmailState {
@@ -199,13 +199,25 @@
         readonly pageName: string
     }
 
-    async function saveSettings(): Promise<Array<Setting>> {
-        return await db.settings.toArray();
+    async function saveSettings(): Promise<Settings | undefined> {
+        if (user === undefined) return;
+        const settings = await db.settings.get(user.settingsID);
+        if (settings === undefined) return;
+        return {
+            charKeySize: settings.charKeySize,
+            rawIterations: settings.rawIterations
+        };
     }
 
-    function loadSettings(settings: Array<Setting>) {
-        settings.forEach((setting) => {
-            db.settings.add(setting);
+    async function loadSettings(settings: Settings): Promise<void> {
+        if (user === undefined) return;
+        let settingsDB = await db.settings.get(user.settingsID);
+        if (settingsDB === undefined) return;
+        settingsDB = settingsDB as WithID<Settings>
+        db.settings.put({
+            id: settingsDB.id,
+            charKeySize: settings.charKeySize,
+            rawIterations: settings.rawIterations
         });
     }
 
@@ -222,15 +234,15 @@
     }
 
     async function saveUserState(user: WithID<User>): Promise<UserState> {
-        let setting = await db.settings.get(user.settingsID);
-        if (setting === undefined) setting = {
-            charKeySize: defaultCharKeySize,
-            rawIterations: defaultRawIterations
-        }
+        let settingsDB = await db.settings.get(user.settingsID);
+        settingsDB = {
+            charKeySize: settingsDB === undefined ? defaultCharKeySize : settingsDB.charKeySize,
+            rawIterations: settingsDB === undefined ? defaultRawIterations : settingsDB.rawIterations
+        };
         const userState: UserState = {
             username: user.username,
             emails: [],
-            settings: setting
+            settings: settingsDB
         };
         const emails = (await db.emails.where("userID").equals(user.id).toArray()) as WithID<Email>[];
         await Promise.all(emails.map(async (email) => {
@@ -264,6 +276,8 @@
     }
 
     async function loadUserState(user: UserState): Promise<void> {
+        const userDB = await db.users.where("username").equals(user.username).toArray();
+        if (userDB.length !== 0) return;
         const settingsID = await db.settings.add(user.settings) as Key;
         const userID = await db.users.add({
             username: user.username,
@@ -302,6 +316,7 @@
             const obj = JSON.parse(text);
             if (isSessionState(obj)) loadSessionState(obj);
             else if (isUserState(obj)) loadUserState(obj);
+            else if (isSettings(obj)) loadSettings(obj);
         }
         for (let file of files) {
             if (file.type !== "application/json") continue;
@@ -320,8 +335,16 @@
         if (obj === null || obj === undefined) return false;
         const userState = obj as UserState;
         if (typeof userState.username !== "string") return false;
+        if (!isSettings(userState.settings)) return false;
         if (!Array.isArray(userState.emails)) return false;
         return userState.emails.length === 0 || userState.emails.every((email) => isEmailState(email));
+    }
+
+    function isSettings(obj: unknown): obj is Settings {
+        if (obj === null || obj === undefined) return false;
+        const settings = obj as Settings;
+        if (typeof settings.charKeySize !== "number") return false;
+        return typeof settings.rawIterations === "number";
     }
 
     function isEmailState(obj: unknown): obj is EmailState {
@@ -342,7 +365,7 @@
     let exportFile: HTMLElement;
     async function handleExportFile() {
         let state: SessionState | UserState;
-        if (user) {
+        if (user !== undefined) {
             state = await saveUserState(user);
         } else {
             state = await saveSessionState();
@@ -354,6 +377,21 @@
         fileUrl = URL.createObjectURL(file);
         await tick();
         exportFile.click();
+    }
+
+    let settingsUrl: string | undefined;
+    let exportSettings: HTMLElement;
+    async function handleExportSettings() {
+        if (user === undefined) return;
+        const state = await saveSettings();
+        if (state === undefined) return;
+        const text = JSON.stringify(state);
+        const file = new Blob([text], {
+            type: "application/json"
+        });
+        settingsUrl = URL.createObjectURL(file);
+        await tick();
+        exportSettings.click();
     }
 </script>
 
@@ -370,10 +408,10 @@
                 <div data-dropdown-toggle="dropdownHoverFiles" data-dropdown-trigger="hover">
                     Files
                 </div>
-                <div id="dropdownHoverFiles" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-32 dark:bg-gray-700">
-                    <div class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                <div id="dropdownHoverFiles" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
+                    <div class="text-sm text-gray-700 dark:text-gray-200">
                         <div>
-                            <button on:click="{()=>{fileInput.click()}}" class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Upload</button>
+                            <button on:click="{()=>{fileInput.click()}}" class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-t-lg">Upload</button>
                             <input type="file" on:change={handleImportFile} multiple={true} accept=".json,application/json" hidden={true} bind:this={fileInput}/>
                         </div>
                         <div>
@@ -381,6 +419,14 @@
                             <a hidden={true} download="my-password-gen.json" href={fileUrl} bind:this={exportFile}>Download</a>
                         </div>
                     </div>
+                    {#if loggedIn}
+                    <div class="text-sm text-gray-700 dark:text-gray-200">
+                        <div>
+                            <button type="button" on:click={handleExportSettings} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg">Download Settings</button>
+                            <a hidden={true} download="my-password-gen-settings.json" href={settingsUrl} bind:this={exportSettings}>Download</a>
+                        </div>
+                    </div>
+                    {/if}
                 </div>
             </div>
             <div hidden={!loggedIn}>
@@ -480,7 +526,7 @@
                             </div>
                         </button>
                     </div>
-                    {#if emailSelected}
+                    {#if emailSelected !== undefined}
                     <div class="flex flex-row pt-8 px-8">
                         <button disabled={!pageSelected} type="button" on:click={handleRemovePage} class="relative text-white disabled:bg-red-300 enabled:bg-red-700 enabled:hover:bg-red-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-red-300 font-medium rounded-l-full text-sm px-5 py-2.5 text-center disabled:dark:bg-red-300 enabled:dark:bg-red-600 enabled:dark:hover:bg-red-700 enabled:dark:focus:ring-red-900">
                             <div class="absolute h-0 w-0 right-7 bottom-8">
@@ -511,7 +557,7 @@
                     <div class="w-full flex justify-center">
                         <button type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
                     </div>
-                    {#if generating || password}
+                    {#if generating || password !== undefined}
                     <div class="w-full mt-12 p-8 bg-gray-100 border border-gray-200 rounded-lg shadow dark:bg-black text-black dark:text-orange-500 dark:border-gray-700 flex flex-row justify-center items-center">
                         {#if generating}
                         <div role="status">
@@ -521,7 +567,7 @@
                             </svg>
                             <span class="sr-only">Loading...</span>
                         </div>
-                        {:else if password}
+                        {:else if password !== undefined}
                         <p class="word-break text-lg">
                             {password}
                         </p>
