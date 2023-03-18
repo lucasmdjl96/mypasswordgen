@@ -12,24 +12,37 @@
     let showPassword = false;
     let masterPassword: string = "";
     let user: WithID<User> | undefined;
+    let loggedIn: boolean;
+    let emailText: string = "";
+    let emails: Observable<Array<Email>>
+    let emailSelected: WithID<Email> | undefined;
+    let pages: Observable<Array<Page>>
+    let pageText: string = "";
+    let pageSelected: WithID<Page> | undefined;
+    const defaultCharKeySize = 40;
+    let charKeySize: number = defaultCharKeySize;
+    let keySize: number;
+    const defaultRawIterations = 0;
+    let rawIterations: number = defaultRawIterations;
+    let iterations: number;
+    let settings: Observable<Settings | undefined> | undefined;
+    let password: string | undefined;
+    let generating: boolean = false;
+    let worker: Worker | undefined;
+    let messageID: number = 0;
+    let fileInput: HTMLInputElement;
+    let fileUrl: string | undefined;
+    let exportFile: HTMLElement;
+    let settingsUrl: string | undefined;
+    let exportSettingsFile: HTMLElement;
+
     $: loggedIn = user !== undefined;
 
-    function logOut(): void {
-        user = undefined;
-        username = "";
-        masterPassword = "";
-        showPassword = false;
-        emailText = "";
-        settings = undefined;
-    }
-
-    let emailText: string = "";
     $: emails = liveQuery(async () => {
-        if (!user || !browser) return [];
+        if (user === undefined || !browser) return [];
         const emails = await db.emails.where("userID").equals(user.id).toArray();
         return emails;
-    }) as Observable<Array<Email>>;
-    let emailSelected: WithID<Email> | undefined = undefined;
+    }) as Observable<Array<Email>>;    
     $: emails.subscribe((value) => {
         const emailMatching = value.find((it) => it.emailAddress === emailText && it.id !== undefined) as WithID<Email> | undefined;
         if (emailMatching !== undefined) {
@@ -40,17 +53,11 @@
     });
     $: onEmailTextChange(emailText);
 
-    function onEmailTextChange(_value: typeof emailText) {
-        pageText = "";
-    }
-
     $: pages = liveQuery(async () => {
-        if (!emailSelected || !browser) return [];
+        if (emailSelected === undefined || !browser) return [];
         const pages = await db.pages.where("emailID").equals(emailSelected.id).toArray();
         return pages;
     });
-    let pageText: string = "";
-    let pageSelected: WithID<Page> | undefined = undefined;
     $: pages.subscribe((value) => {
         const pageMatching = value.find((it) => it.pageName === pageText && it.id !== undefined) as WithID<Page> | undefined;
         if (pageMatching !== undefined) {
@@ -60,27 +67,11 @@
         }
     });
     $: onPageTextChange(pageText);
-    
 
-    function onPageTextChange(_value: typeof pageText) {
-        password = undefined;
-        generating = false;
-        messageID++;
-    }
-
-    const defaultCharKeySize = 40;
-    let charKeySize: number = defaultCharKeySize;
     $: keySize = charKeySize * 6 / 32;
-    const defaultRawIterations = 0;
-    let rawIterations: number = defaultRawIterations;
     $: iterations = Math.floor(10000 * (100 ** rawIterations));
-    let settings: Observable<Settings | undefined> | undefined;
-    let password: string | undefined = undefined;
-    let generating: boolean = false;
 
-    let worker: Worker | undefined = undefined;
-
-    let messageID: number = 0;
+    onMount(loadWorker);
 
     async function loadWorker() {
         const newWorker = await import('$lib/worker?worker');
@@ -92,10 +83,24 @@
             }
         };
     }
-    onMount(loadWorker);
+
+    async function handleRegister(): Promise<void> {
+        if (username === "" || !browser) return;
+        const result = await db.users.where("username").equals(username).toArray();
+        if (result.length > 0) return;
+        const settingsID = await db.settings.add({
+            charKeySize: defaultCharKeySize,
+            rawIterations: defaultRawIterations
+        }) as Key;
+        await db.users.add({
+            username: username,
+            settingsID: settingsID
+        })
+        handleLogIn();
+    }
 
     async function handleLogIn(): Promise<void> {
-        if (!username || !browser) return;
+        if (username === "" || !browser) return;
         const result = await db.users.where("username").equals(username).toArray();
         if (result.length === 0) return;
         user = result[0] as WithID<User>
@@ -110,56 +115,51 @@
         });
     }
 
-    async function handleRegister(): Promise<void> {
-        if (!username || !browser) return;
-        const result = await db.users.where("username").equals(username).toArray();
-        if (result.length > 0) return;
-        const settingsID = await db.settings.add({
-            charKeySize: defaultCharKeySize,
-            rawIterations: defaultRawIterations
-        }) as Key;
-        await db.users.add({
-            username: username,
-            settingsID: settingsID
-        })
-        handleLogIn();
+    function handleLogOut(): void {
+        user = undefined;
+        username = "";
+        masterPassword = "";
+        showPassword = false;
+        emailText = "";
+        settings = undefined;
+    }
+
+    function onEmailTextChange(_value: typeof emailText) {
+        pageText = "";
     }
 
     function handleRemoveEmail(): void {
-        if (!emailSelected || !browser) return;
+        if (emailSelected === undefined || !browser) return;
         db.emails.delete(emailSelected.id);
         emailText = "";
     }
 
     function handleAddEmail(): void {
-        if (!user || !emailText || !browser) return;
+        if (user === undefined || emailText === "" || !browser) return;
         db.emails.add({
             emailAddress: emailText,
             userID: user.id
         })
     }
 
+    function onPageTextChange(_value: typeof pageText) {
+        password = undefined;
+        generating = false;
+        messageID++;
+    }
+
     function handleRemovePage(): void {
-        if (!pageSelected || !browser) return;
+        if (pageSelected === undefined || !browser) return;
         db.pages.delete(pageSelected.id);
         pageText = "";
     }
 
     function handleAddPage(): void {
-        if (!emailSelected || !pageText || !browser) return;
+        if (emailSelected === undefined || pageText === "" || !browser) return;
         db.pages.add({
             pageName: pageText,
             emailID: emailSelected.id
         })
-    }
-
-    function handleSaveSettings(): void {
-        if (user === undefined) return;
-        db.settings.put({
-            id: user.settingsID,
-            charKeySize: charKeySize,
-            rawIterations: rawIterations
-        });
     }
 
     function handleComputePassword(): void {
@@ -180,6 +180,15 @@
         if (password !== undefined) navigator.clipboard.writeText(password);
     }
 
+    function handleSaveSettings(): void {
+        if (user === undefined) return;
+        db.settings.put({
+            id: user.settingsID,
+            charKeySize: charKeySize,
+            rawIterations: rawIterations
+        });
+    }
+
     interface SessionState {
         readonly users: Array<UserState>
     }
@@ -198,132 +207,7 @@
     interface PageState {
         readonly pageName: string
     }
-
-    async function saveSettings(): Promise<Settings | undefined> {
-        if (user === undefined) return;
-        const settings = await db.settings.get(user.settingsID);
-        if (settings === undefined) return;
-        return {
-            charKeySize: settings.charKeySize,
-            rawIterations: settings.rawIterations
-        };
-    }
-
-    async function loadSettings(settings: Settings): Promise<void> {
-        if (user === undefined) return;
-        let settingsDB = await db.settings.get(user.settingsID);
-        if (settingsDB === undefined) return;
-        settingsDB = settingsDB as WithID<Settings>
-        db.settings.put({
-            id: settingsDB.id,
-            charKeySize: settings.charKeySize,
-            rawIterations: settings.rawIterations
-        });
-    }
-
-    async function saveSessionState(): Promise<SessionState> {
-        const state: SessionState = {
-            users: [],
-        };
-        const users = (await db.users.toArray()) as WithID<User>[];
-        await Promise.all(users.map(async (user) => {
-            const userState = await saveUserState(user);
-            state.users.push(userState);
-        }));
-        return state;
-    }
-
-    async function saveUserState(user: WithID<User>): Promise<UserState> {
-        let settingsDB = await db.settings.get(user.settingsID);
-        settingsDB = {
-            charKeySize: settingsDB === undefined ? defaultCharKeySize : settingsDB.charKeySize,
-            rawIterations: settingsDB === undefined ? defaultRawIterations : settingsDB.rawIterations
-        };
-        const userState: UserState = {
-            username: user.username,
-            emails: [],
-            settings: settingsDB
-        };
-        const emails = (await db.emails.where("userID").equals(user.id).toArray()) as WithID<Email>[];
-        await Promise.all(emails.map(async (email) => {
-            const emailState = await saveEmailState(email);
-            userState.emails.push(emailState);
-        }));
-        return userState;
-    }
-
-    async function saveEmailState(email: WithID<Email>): Promise<EmailState> {
-        const emailState: EmailState = {
-            emailAddress: email.emailAddress,
-            pages: []
-        };
-        const pages = (await db.pages.where("emailID").equals(email.id).toArray()) as WithID<Page>[];
-        await Promise.all(pages.map((page) => {
-            const pageState = savePageState(page);
-            emailState.pages.push(pageState);
-        }));
-        return emailState;
-    }
-
-    function savePageState(page: WithID<Page>): PageState {
-        return { pageName: page.pageName};
-    }
-
-    function loadSessionState(state: SessionState): void {
-        state.users.forEach(async (user) => {
-            loadUserState(user);
-        });
-    }
-
-    async function loadUserState(user: UserState): Promise<void> {
-        const userDB = await db.users.where("username").equals(user.username).toArray();
-        if (userDB.length !== 0) return;
-        const settingsID = await db.settings.add(user.settings) as Key;
-        const userID = await db.users.add({
-            username: user.username,
-            settingsID: settingsID
-        }) as Key;
-        user.emails.forEach(async (email) => {
-            loadEmailState(email, userID);
-        });
-    }
-
-    async function loadEmailState(email: EmailState, userID: Key): Promise<void> {
-        const emailID = (await db.emails.add({
-            emailAddress: email.emailAddress,
-            userID: userID
-        })) as Key;
-        email.pages.forEach(async (page) => {
-            loadPageState(page, emailID);
-        });
-    }
-
-    function loadPageState(page: PageState, emailID: Key): void {
-        db.pages.add({
-            pageName: page.pageName,
-            emailID: emailID
-        });
-    }
-
-    let fileInput: HTMLInputElement;
-    function handleImportFile(): void {
-        const currentTarget = fileInput;
-        const files = currentTarget.files;
-        if (files === null || files === undefined || files.length === 0) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            const text = reader.result as string;
-            const obj = JSON.parse(text);
-            if (isSessionState(obj)) loadSessionState(obj);
-            else if (isUserState(obj)) loadUserState(obj);
-            else if (isSettings(obj)) loadSettings(obj);
-        }
-        for (let file of files) {
-            if (file.type !== "application/json") continue;
-            reader.readAsText(file);
-        }
-    }
-
+    
     function isSessionState(obj: unknown): obj is SessionState {
         if (obj === null || obj === undefined) return false;
         const sessionState = obj as SessionState;
@@ -361,14 +245,12 @@
         return typeof pageState.pageName === "string";
     }
 
-    let fileUrl: string | undefined;
-    let exportFile: HTMLElement;
     async function handleExportFile() {
         let state: SessionState | UserState;
         if (user !== undefined) {
-            state = await saveUserState(user);
+            state = await exportUserState(user);
         } else {
-            state = await saveSessionState();
+            state = await exportSessionState();
         }
         const text = JSON.stringify(state);
         const file = new Blob([text], {
@@ -379,11 +261,9 @@
         exportFile.click();
     }
 
-    let settingsUrl: string | undefined;
-    let exportSettings: HTMLElement;
     async function handleExportSettings() {
         if (user === undefined) return;
-        const state = await saveSettings();
+        const state = await exportSettings();
         if (state === undefined) return;
         const text = JSON.stringify(state);
         const file = new Blob([text], {
@@ -391,7 +271,131 @@
         });
         settingsUrl = URL.createObjectURL(file);
         await tick();
-        exportSettings.click();
+        exportSettingsFile.click();
+    }
+
+    function handleImportFile(): void {
+        const currentTarget = fileInput;
+        const files = currentTarget.files;
+        if (files === null || files === undefined || files.length === 0) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = reader.result as string;
+            const obj = JSON.parse(text);
+            if (isSessionState(obj)) importSessionState(obj);
+            else if (isUserState(obj)) importUserState(obj);
+            else if (isSettings(obj)) importSettings(obj);
+        }
+        for (let file of files) {
+            if (file.type !== "application/json") continue;
+            reader.readAsText(file);
+        }
+    }
+
+    async function exportSessionState(): Promise<SessionState> {
+        const state: SessionState = {
+            users: [],
+        };
+        const users = (await db.users.toArray()) as WithID<User>[];
+        await Promise.all(users.map(async (user) => {
+            const userState = await exportUserState(user);
+            state.users.push(userState);
+        }));
+        return state;
+    }
+
+    async function exportUserState(user: WithID<User>): Promise<UserState> {
+        let settingsDB = await db.settings.get(user.settingsID);
+        settingsDB = {
+            charKeySize: settingsDB === undefined ? defaultCharKeySize : settingsDB.charKeySize,
+            rawIterations: settingsDB === undefined ? defaultRawIterations : settingsDB.rawIterations
+        };
+        const userState: UserState = {
+            username: user.username,
+            emails: [],
+            settings: settingsDB
+        };
+        const emails = (await db.emails.where("userID").equals(user.id).toArray()) as WithID<Email>[];
+        await Promise.all(emails.map(async (email) => {
+            const emailState = await exportEmailState(email);
+            userState.emails.push(emailState);
+        }));
+        return userState;
+    }
+
+    async function exportEmailState(email: WithID<Email>): Promise<EmailState> {
+        const emailState: EmailState = {
+            emailAddress: email.emailAddress,
+            pages: []
+        };
+        const pages = (await db.pages.where("emailID").equals(email.id).toArray()) as WithID<Page>[];
+        await Promise.all(pages.map((page) => {
+            const pageState = exportPageState(page);
+            emailState.pages.push(pageState);
+        }));
+        return emailState;
+    }
+
+    function exportPageState(page: WithID<Page>): PageState {
+        return { pageName: page.pageName};
+    }
+
+    async function exportSettings(): Promise<Settings | undefined> {
+        if (user === undefined) return;
+        const settings = await db.settings.get(user.settingsID);
+        if (settings === undefined) return;
+        return {
+            charKeySize: settings.charKeySize,
+            rawIterations: settings.rawIterations
+        };
+    }
+
+    function importSessionState(state: SessionState): void {
+        state.users.forEach(async (user) => {
+            importUserState(user);
+        });
+    }
+
+    async function importUserState(user: UserState): Promise<void> {
+        const userDB = await db.users.where("username").equals(user.username).toArray();
+        if (userDB.length !== 0) return;
+        const settingsID = await db.settings.add(user.settings) as Key;
+        const userID = await db.users.add({
+            username: user.username,
+            settingsID: settingsID
+        }) as Key;
+        user.emails.forEach(async (email) => {
+            importEmailState(email, userID);
+        });
+    }
+
+    async function importEmailState(email: EmailState, userID: Key): Promise<void> {
+        const emailID = (await db.emails.add({
+            emailAddress: email.emailAddress,
+            userID: userID
+        })) as Key;
+        email.pages.forEach(async (page) => {
+            importPageState(page, emailID);
+        });
+    }
+
+    function importPageState(page: PageState, emailID: Key): void {
+        db.pages.add({
+            pageName: page.pageName,
+            emailID: emailID
+        });
+    }
+
+    async function importSettings(settings: Settings): Promise<void> {
+        if (user === undefined) return;
+        let settingsDB = await db.settings.get(user.settingsID);
+        if (settingsDB === undefined) return;
+        settingsDB = settingsDB as WithID<Settings>
+        db.settings.put({
+            id: settingsDB.id,
+            charKeySize: settings.charKeySize,
+            rawIterations: settings.rawIterations
+        });
     }
 </script>
 
@@ -423,7 +427,7 @@
                     <div class="text-sm text-gray-700 dark:text-gray-200">
                         <div>
                             <button type="button" on:click={handleExportSettings} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg">Download Settings</button>
-                            <a hidden={true} download="my-password-gen-settings.json" href={settingsUrl} bind:this={exportSettings}>Download</a>
+                            <a hidden={true} download="my-password-gen-settings.json" href={settingsUrl} bind:this={exportSettingsFile}>Download</a>
                         </div>
                     </div>
                     {/if}
@@ -452,7 +456,7 @@
                         </div>
                     </div>
                     <div>
-                        <button type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg" on:click={logOut}>
+                        <button type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg" on:click={handleLogOut}>
                             Log out
                         </button>
                     </div>
