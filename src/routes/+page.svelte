@@ -36,6 +36,24 @@
     let settingsUrl: string | undefined;
     let exportSettingsFile: HTMLElement;
 
+    let usernameInputElement: HTMLElement;
+    let passwordInputVisibleElement: HTMLElement;
+    let passwordInputHiddenElement: HTMLElement;
+    let showPasswordButtonElement: HTMLElement;
+    let hidePasswordButtonElement: HTMLElement;
+    let loginButtonElement: HTMLElement;
+    let registerButtonElement: HTMLElement;
+
+    let emailInputElement: HTMLElement;
+    let emailDeleteButtonElement: HTMLElement;
+    let emailAddButtonElement: HTMLElement;
+    let pageInputElement: HTMLElement;
+    let pageDeleteButtonElement: HTMLElement;
+    let pageAddButtonElement: HTMLElement;
+    let generateButtonElement: HTMLElement;
+    let copyButtonElement: HTMLElement;
+    let logoutButtonElement: HTMLElement;
+
     $: loggedIn = user !== undefined;
 
     $: emails = liveQuery(async () => {
@@ -84,6 +102,49 @@
         };
     }
 
+    function handleKeyboardMain(event: KeyboardEvent): void {
+        if (event.ctrlKey && event.key === "Backspace") {
+            logoutButtonElement?.click();
+        }
+    }
+
+    function handleKeyboardUsername(event: KeyboardEvent): void {
+        if (event.key === "Enter" || (event.ctrlKey && event.key === "ArrowDown")) {
+            if (showPassword) {
+                passwordInputVisibleElement?.focus();
+            } else {
+                passwordInputHiddenElement?.focus();
+            }
+        }
+    }
+
+    function handleKeyboardPassword(event: KeyboardEvent): void {
+        if (!event.altKey && event.key === "Enter") {
+            loginButtonElement?.click();
+        } else if (event.key === "Enter") {
+            registerButtonElement?.click();
+        } else if (event.ctrlKey && event.key === "ArrowUp") {
+            usernameInputElement?.focus();
+        } else if (event.ctrlKey && event.key === "s") {
+            event.preventDefault();
+            if (showPassword) {
+                hidePasswordButtonElement?.click();
+            } else {
+                showPasswordButtonElement?.click();
+            }
+        }
+    }
+
+    async function handleToggleShowPassword(): Promise<void> {
+        showPassword = !showPassword;
+        await tick();
+        if (showPassword) {
+            passwordInputVisibleElement?.focus();
+        } else {
+            passwordInputHiddenElement?.focus();
+        }
+    }
+
     async function handleRegister(): Promise<void> {
         if (username === "" || !browser) return;
         const result = await db.users.where("username").equals(username).toArray();
@@ -124,34 +185,54 @@
         settings = undefined;
     }
 
-    function onEmailTextChange(_value: typeof emailText) {
+    function onEmailTextChange(_value: typeof emailText): void {
         pageText = "";
     }
 
-    function handleRemoveEmail(): void {
+    async function handleRemoveEmail(): Promise<void> {
         if (emailSelected === undefined || !browser) return;
-        db.emails.delete(emailSelected.id);
+        await db.emails.delete(emailSelected.id);
         emailText = "";
+        await tick();
+        emailInputElement?.focus();
     }
 
-    function handleAddEmail(): void {
+    async function handleAddEmail(): Promise<void> {
         if (user === undefined || emailText === "" || !browser) return;
-        db.emails.add({
+        await db.emails.add({
             emailAddress: emailText,
             userID: user.id
         })
+        await tick();
+        pageInputElement?.focus();
     }
 
-    function onPageTextChange(_value: typeof pageText) {
+    function handleKeyboardEmail(event: KeyboardEvent): void {
+        if (event.ctrlKey && event.key === "Delete") {
+            emailDeleteButtonElement?.click();
+        } else if (event.key === "Enter") {
+            if (emailSelected !== undefined) {
+                pageInputElement?.focus();
+            } else {
+                emailAddButtonElement?.click();
+            }
+        } else if (event.ctrlKey && event.key === "ArrowDown" && emailSelected !== undefined) {
+            pageInputElement?.focus();
+        }
+    }
+
+    function onPageTextChange(_value: typeof pageText): void {
         password = undefined;
         generating = false;
         messageID++;
     }
 
-    function handleRemovePage(): void {
+    async function handleRemovePage(): Promise<void> {
         if (pageSelected === undefined || !browser) return;
-        db.pages.delete(pageSelected.id);
+        await db.pages.delete(pageSelected.id);
         pageText = "";
+        await tick();
+        pageInputElement?.focus();
     }
 
     function handleAddPage(): void {
@@ -160,6 +241,22 @@
             pageName: pageText,
             emailID: emailSelected.id
         })
+    }
+    
+    function handleKeyboardPage(event: KeyboardEvent): void {
+        if (event.ctrlKey && event.key === "Delete") {
+            pageDeleteButtonElement?.click();
+        } else if (event.key === "Enter") {
+            if (pageSelected !== undefined) {
+                generateButtonElement?.click();
+            } else {
+                pageAddButtonElement?.click();
+            }
+        } else if (event.ctrlKey && event.key === "ArrowUp") {
+            emailInputElement?.focus();
+        } else if (event.ctrlKey && event.key === "c") {
+            copyButtonElement?.click();
+        }
     }
 
     function handleComputePassword(): void {
@@ -399,14 +496,18 @@
     }
 </script>
 
-<div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800">
+<div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800" on:keydown={handleKeyboardMain}>
     <nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900">
         <div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white">
             <div>
-                About
+                <a href="/about">
+                    About
+                </a>
             </div>
             <div>
-                Privacy Policy
+                <a href="/cookies">
+                    Privacy Policy
+                </a>
             </div>
             <div>
                 <div data-dropdown-toggle="dropdownHoverFiles" data-dropdown-trigger="hover">
@@ -456,7 +557,7 @@
                         </div>
                     </div>
                     <div>
-                        <button type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg" on:click={handleLogOut}>
+                        <button bind:this={logoutButtonElement} type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg" on:click={handleLogOut}>
                             Log out
                         </button>
                     </div>
@@ -476,21 +577,22 @@
                 <div class="flex flex-col justify-around gap-4 w-full">
                     <div class="flex justify-center">
                         <div class="w-full pt-8 px-8">
-                            <input type="text" aria-label="username" bind:value={username} placeholder="Username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                            <!-- svelte-ignore a11y-autofocus -->
+                            <input bind:this={usernameInputElement} autofocus={true} type="text" aria-label="username" bind:value={username} on:keydown={handleKeyboardUsername} placeholder="Username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
                         </div>
                     </div>
                     <div class="flex justify-center">
                         <div class="relative w-full pt-8 px-8">
                             {#if showPassword}
-                            <input type="text" aria-label="password" bind:value={masterPassword} placeholder="Password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
-                            <div class="absolute inset-y-0 right-0 flex items-center pt-8" on:click={() => showPassword = !showPassword} on:keypress={() => {}}>
+                            <input bind:this={passwordInputVisibleElement} id="password" type="text" aria-label="password" bind:value={masterPassword} on:keydown={handleKeyboardPassword} placeholder="Password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                            <div bind:this={hidePasswordButtonElement} class="absolute inset-y-0 right-0 flex items-center pt-8" on:click={handleToggleShowPassword} on:keypress={() => {}}>
                                 <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"></path>
                                 </svg>
                             </div>
                             {:else}
-                            <input type="password" aria-label="password" bind:value={masterPassword} placeholder="Password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
-                            <div class="absolute inset-y-0 right-0 flex items-center pt-8" on:click={() => showPassword = !showPassword} on:keypress={() => {}}>
+                            <input bind:this={passwordInputHiddenElement} id="password" type="password" aria-label="password" bind:value={masterPassword} on:keydown={handleKeyboardPassword} placeholder="Password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                            <div bind:this={showPasswordButtonElement} class="absolute inset-y-0 right-0 flex items-center pt-8" on:click={handleToggleShowPassword} on:keypress={() => {}}>
                                 <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -501,20 +603,21 @@
                     </div>
                 </div>
                 <div class="flex justify-around gap-8 m-8 w-[80%]">
-                    <button type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" on:click={handleLogIn}>Log in</button>
-                    <button type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" on:click={handleRegister}>Register</button>
+                    <button bind:this={loginButtonElement} type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" on:click={handleLogIn}>Log in</button>
+                    <button bind:this={registerButtonElement} type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" on:click={handleRegister}>Register</button>
                 </div>
                 {:else}
                 <div class="flex flex-col justify-around gap-4 w-full">
                     <div class="flex flex-row pt-8 px-8">
-                        <button disabled={!emailSelected} type="button" on:click={handleRemoveEmail} class="relative text-white disabled:bg-red-300 enabled:bg-red-700 enabled:hover:bg-red-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-red-300 font-medium rounded-l-full text-sm px-5 py-2.5 text-center disabled:dark:bg-red-300 enabled:dark:bg-red-600 enabled:dark:hover:bg-red-700 enabled:dark:focus:ring-red-900">
+                        <button bind:this={emailDeleteButtonElement} disabled={!emailSelected} type="button" on:click={handleRemoveEmail} class="relative text-white disabled:bg-red-300 enabled:bg-red-700 enabled:hover:bg-red-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-red-300 font-medium rounded-l-full text-sm px-5 py-2.5 text-center disabled:dark:bg-red-300 enabled:dark:bg-red-600 enabled:dark:hover:bg-red-700 enabled:dark:focus:ring-red-900">
                             <div class="absolute h-0 w-0 right-7 bottom-8">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
                                 </svg>
                             </div>
                         </button>
-                        <input bind:value={emailText} aria-label="Email" type="text" list="emailList" placeholder="Email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                        <!-- svelte-ignore a11y-autofocus -->
+                        <input bind:this={emailInputElement} autofocus={true} bind:value={emailText} on:keydown={handleKeyboardEmail} aria-label="Email" type="text" list="emailList" placeholder="Email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
                         <datalist id="emailList">
                             {#if $emails}
                             {#each $emails as email}
@@ -522,7 +625,7 @@
                             {/each}
                             {/if}
                         </datalist>
-                        <button disabled={emailSelected !== undefined || emailText === ""} type="button" on:click={handleAddEmail} class="relative text-white disabled:bg-green-300 enabled:bg-green-700 enabled:hover:bg-green-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-green-300 font-medium rounded-r-full text-sm px-5 py-2.5 text-center disabled:dark:bg-green-300 enabled:dark:bg-green-600 enabled:dark:hover:bg-green-700 enabled:dark:focus:ring-green-800">
+                        <button bind:this={emailAddButtonElement} disabled={emailSelected !== undefined || emailText === ""} type="button" on:click={handleAddEmail} class="relative text-white disabled:bg-green-300 enabled:bg-green-700 enabled:hover:bg-green-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-green-300 font-medium rounded-r-full text-sm px-5 py-2.5 text-center disabled:dark:bg-green-300 enabled:dark:bg-green-600 enabled:dark:hover:bg-green-700 enabled:dark:focus:ring-green-800">
                             <div class="absolute h-0 w-0 right-8 bottom-8">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
@@ -532,14 +635,14 @@
                     </div>
                     {#if emailSelected !== undefined}
                     <div class="flex flex-row pt-8 px-8">
-                        <button disabled={!pageSelected} type="button" on:click={handleRemovePage} class="relative text-white disabled:bg-red-300 enabled:bg-red-700 enabled:hover:bg-red-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-red-300 font-medium rounded-l-full text-sm px-5 py-2.5 text-center disabled:dark:bg-red-300 enabled:dark:bg-red-600 enabled:dark:hover:bg-red-700 enabled:dark:focus:ring-red-900">
+                        <button bind:this={pageDeleteButtonElement} disabled={!pageSelected} type="button" on:click={handleRemovePage} class="relative text-white disabled:bg-red-300 enabled:bg-red-700 enabled:hover:bg-red-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-red-300 font-medium rounded-l-full text-sm px-5 py-2.5 text-center disabled:dark:bg-red-300 enabled:dark:bg-red-600 enabled:dark:hover:bg-red-700 enabled:dark:focus:ring-red-900">
                             <div class="absolute h-0 w-0 right-7 bottom-8">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
                                 </svg>
                             </div>
                         </button>
-                        <input bind:value={pageText} aria-label="page" type="text" list="pageList" placeholder="Web page" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                        <input bind:this={pageInputElement} bind:value={pageText} on:keydown={handleKeyboardPage} aria-label="page" type="text" list="pageList" placeholder="Website" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
                         <datalist id="pageList">
                             {#if $pages}
                             {#each $pages as page}
@@ -547,7 +650,7 @@
                             {/each}
                             {/if}
                         </datalist>
-                        <button disabled={pageSelected !== undefined || pageText === ""} type="button" on:click={handleAddPage} class="relative text-white disabled:bg-green-300 enabled:bg-green-700 enabled:hover:bg-green-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-green-300 font-medium rounded-r-full text-sm px-5 py-2.5 text-center disabled:dark:bg-green-300 enabled:dark:bg-green-600 enabled:dark:hover:bg-green-700 enabled:dark:focus:ring-green-800">
+                        <button bind:this={pageAddButtonElement} disabled={pageSelected !== undefined || pageText === ""} type="button" on:click={handleAddPage} class="relative text-white disabled:bg-green-300 enabled:bg-green-700 enabled:hover:bg-green-800 enabled:focus:outline-none enabled:focus:ring-4 enabled:focus:ring-green-300 font-medium rounded-r-full text-sm px-5 py-2.5 text-center disabled:dark:bg-green-300 enabled:dark:bg-green-600 enabled:dark:hover:bg-green-700 enabled:dark:focus:ring-green-800">
                             <div class="absolute h-0 w-0 right-8 bottom-8">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
@@ -559,7 +662,7 @@
                 </div>
                 <div class="m-8 w-full flex flex-col items-center">
                     <div class="w-full flex justify-center">
-                        <button type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
+                        <button bind:this={generateButtonElement} type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
                     </div>
                     {#if generating || password !== undefined}
                     <div class="w-full mt-12 p-8 bg-gray-100 border border-gray-200 rounded-lg shadow dark:bg-black text-black dark:text-orange-500 dark:border-gray-700 flex flex-row justify-center items-center">
@@ -576,7 +679,7 @@
                             {password}
                         </p>
                         <div>
-                            <button type="button" on:click={handleCopy} class="ml-4 hover:bg-slate-300 dark:hover:bg-gray-900 p-1 rounded-lg">
+                            <button bind:this={copyButtonElement} type="button" on:click={handleCopy} class="ml-4 hover:bg-slate-300 dark:hover:bg-gray-900 p-1 rounded-lg">
                                 <svg class="h-5 w-5 text-gray-900 dark:text-gray-100" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"></path>
                                 </svg>
