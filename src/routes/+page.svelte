@@ -62,19 +62,21 @@
     let charKeySize: number = 40;
     $: keySize = charKeySize*6/32;
     let rawIterations: number = 0;
-    $: iterations = Math.floor(10000 * (100 ** rawIterations));
+    $: iterations = Math.floor(10000 * (100 ** rawIterations))
+    let settings = liveQuery(async () => {
+        const charKeySize = await db.settings.get("charKeySize");
+        const rawIterations = await db.settings.get("rawIterations");
+        return {
+            charKeySize: charKeySize === undefined ? undefined : charKeySize.value as number,
+            rawIterations: rawIterations === undefined ? undefined : rawIterations.value as number
+        };
+    });
+    $: settings.subscribe((value) => {
+        if (value.charKeySize !== undefined) charKeySize = value.charKeySize;
+        if (value.rawIterations !== undefined) rawIterations = value.rawIterations;
+    });
     let password: string | undefined = undefined;
     let generating: boolean = false;
-    let generatingDots: number = 0;
-    let generatingInterval: ReturnType<typeof setInterval> | undefined;
-    $: if (generating && !generatingInterval) {
-        generatingInterval = setInterval(() => {
-            generatingDots = (generatingDots + 1) % 4;
-        }, 1000)
-    } else if (!generating) {
-        clearInterval(generatingInterval);
-        generatingInterval = undefined;
-    }
 
     let worker: Worker | undefined = undefined;
 
@@ -137,7 +139,18 @@
         })
     }
 
-    function computePassword(): void {
+    function handleSaveSettings(): void {
+        db.settings.put({
+            key: "charKeySize",
+            value: charKeySize
+        });
+        db.settings.put({
+            key: "rawIterations",
+            value: rawIterations
+        });
+    }
+
+    function handleComputePassword(): void {
         generating = true;
         const message: WorkerRequest = {
             id: ++messageID,
@@ -358,7 +371,7 @@
                     Settings
                 </div>
                 <div id="dropdownHoverSettings" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-64 dark:bg-gray-700">
-                    <ul class="py-4 text-sm text-gray-700 dark:text-gray-200">
+                    <ul class="pt-4 text-sm text-gray-700 dark:text-gray-200">
                         <li class="px-2 py-2 flex justify-center">
                             Iterations: {iterations}
                         </li>
@@ -370,6 +383,9 @@
                         </li>
                         <li class="w-full flex justify-center px-2 pb-2">
                             <input type="range" min="8" max="100" step="1" bind:value={charKeySize} class="w-[90%]"/>
+                        </li>
+                        <li class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click="{handleSaveSettings}" on:keypress="{()=>{}}">
+                            Save Settings
                         </li>
                     </ul>
                     <div>
@@ -476,7 +492,7 @@
                 </div>
                 <div class="m-8 w-full flex flex-col items-center">
                     <div class="w-full flex justify-center">
-                        <button type="button" disabled={pageSelected === undefined} on:click={computePassword} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
+                        <button type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
                     </div>
                     {#if generating || password}
                     <div class="w-full mt-12 p-8 bg-gray-100 border border-gray-200 rounded-lg shadow dark:bg-black text-black dark:text-orange-500 dark:border-gray-700 flex flex-row justify-center items-center">
@@ -490,7 +506,7 @@
                         </div>
                         {:else if password}
                         <p class="word-break text-lg">
-                            {password}asdsfadasfasdasfasfagadasdasfa
+                            {password}
                         </p>
                         <div>
                             <button type="button" on:click={handleCopy} class="ml-4 hover:bg-slate-300 dark:hover:bg-gray-900 p-1 rounded-lg">
