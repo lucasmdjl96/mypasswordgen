@@ -54,6 +54,9 @@
     let copyButtonElement: HTMLElement;
     let logoutButtonElement: HTMLElement;
 
+    let cookiesAccepted: boolean = typeof window !== "undefined" && localStorage.getItem("cookies") === "true";
+    let closeCookiesButtonElement: HTMLElement;
+
     $: loggedIn = user !== undefined;
 
     $: emails = liveQuery(async () => {
@@ -106,6 +109,12 @@
         if (event.ctrlKey && event.key === "Backspace") {
             logoutButtonElement?.click();
         }
+    }
+    
+    function handleCloseCookies() {
+        localStorage.setItem("cookies", "true");
+        cookiesAccepted = true;
+        usernameInputElement?.focus();
     }
 
     function handleKeyboardUsername(event: KeyboardEvent): void {
@@ -174,6 +183,7 @@
             charKeySize = value.charKeySize;
             rawIterations = value.rawIterations;
         });
+        closeCookiesButtonElement?.click();
     }
 
     function handleLogOut(): void {
@@ -496,6 +506,8 @@
     }
 </script>
 
+{@debug cookiesAccepted}
+
 <div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800" on:keydown={handleKeyboardMain}>
     <nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900">
         <div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white">
@@ -693,6 +705,31 @@
             </div>    
         </div>
     </div>
+    {#if typeof window !== "undefined" && !cookiesAccepted}
+    <div id="bottom-banner" class="fixed bottom-0 left-0 z-50 flex justify-between w-full p-4 border-t border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+        <div class="flex items-center mx-auto">
+            <p class="flex items-center text-sm font-normal text-gray-500 dark:text-gray-400">
+                <span>
+                    This website uses LocalStorage and indexedDB to store the necessary data for the website to work, and by continuing to use this website you agree to this use. For more information you can visit our 
+                    <a href="/cookies">
+                        Privacy Policy.
+                    </a>
+                </span>
+            </p>
+        </div>
+        <div class="flex items-center">
+            <button bind:this={closeCookiesButtonElement} on:click={handleCloseCookies} type="button" class="flex-shrink-0 inline-flex justify-center items-center text-gray-400 hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 dark:hover:bg-gray-600 dark:hover:text-white">
+                <svg aria-hidden="true" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
+                    </path>
+                </svg>
+                <span class="sr-only">
+                    Close banner
+                </span>
+            </button>
+        </div>
+    </div>
+    {/if}
     <footer class="p-4 bg-gray-300 shadow flex items-center justify-end dark:bg-gray-900">
         <div>
             <form action="https://www.paypal.com/donate" method="post" target="_top">

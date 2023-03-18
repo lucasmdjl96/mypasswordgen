@@ -1,6 +1,11 @@
 <script lang="ts">
     import "../../app.css";
     import "flowbite/dist/flowbite.css";
+
+    function handleDeleteData() {
+        window.indexedDB.deleteDatabase("database");
+        localStorage.clear();
+    }
 </script>
 
 <div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800">
@@ -17,7 +22,7 @@
                 </a>
             </div>
             <div>
-                <button type="button" on:click="{ () => window.indexedDB.deleteDatabase("database") }">
+                <button type="button" on:click={handleDeleteData}>
                     Delete Data
                 </button>
             </div>
