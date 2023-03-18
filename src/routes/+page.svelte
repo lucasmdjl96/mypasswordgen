@@ -14,6 +14,15 @@
     let user: WithID<User> | undefined;
     $: loggedIn = user !== undefined;
 
+    function logOut(): void {
+        user = undefined;
+        username = "";
+        masterPassword = "";
+        showPassword = false;
+        emailText = "";
+        settings = undefined;
+    }
+
     let emailText: string = "";
     $: emails = liveQuery(async () => {
         if (!user || !browser) return [];
@@ -59,22 +68,13 @@
         messageID++;
     }
 
-    let charKeySize: number = 40;
-    $: keySize = charKeySize*6/32;
-    let rawIterations: number = 0;
-    $: iterations = Math.floor(10000 * (100 ** rawIterations))
-    let settings = liveQuery(async () => {
-        const charKeySize = await db.settings.get("charKeySize");
-        const rawIterations = await db.settings.get("rawIterations");
-        return {
-            charKeySize: charKeySize === undefined ? undefined : charKeySize.value as number,
-            rawIterations: rawIterations === undefined ? undefined : rawIterations.value as number
-        };
-    });
-    $: settings.subscribe((value) => {
-        if (value.charKeySize !== undefined) charKeySize = value.charKeySize;
-        if (value.rawIterations !== undefined) rawIterations = value.rawIterations;
-    });
+    const defaultCharKeySize = 40;
+    let charKeySize: number = defaultCharKeySize;
+    $: keySize = charKeySize * 6 / 32;
+    const defaultRawIterations = 0;
+    let rawIterations: number = defaultRawIterations;
+    $: iterations = Math.floor(10000 * (100 ** rawIterations));
+    let settings: Observable<Setting | undefined> | undefined;
     let password: string | undefined = undefined;
     let generating: boolean = false;
 
@@ -99,14 +99,28 @@
         const result = await db.users.where("username").equals(username).toArray();
         if (result.length === 0) return;
         user = result[0] as WithID<User>
+        settings = liveQuery(async () => {
+            const settings = await db.settings.get(result[0].settingsID);
+            return settings;
+        });
+        settings.subscribe((value) => {
+            if (value === undefined) return;
+            charKeySize = value.charKeySize;
+            rawIterations = value.rawIterations;
+        });
     }
 
     async function handleRegister(): Promise<void> {
         if (!username || !browser) return;
         const result = await db.users.where("username").equals(username).toArray();
         if (result.length > 0) return;
+        const settingsID = await db.settings.add({
+            charKeySize: defaultCharKeySize,
+            rawIterations: defaultRawIterations
+        }) as Key;
         await db.users.add({
-            username: username
+            username: username,
+            settingsID: settingsID
         })
         handleLogIn();
     }
@@ -140,13 +154,11 @@
     }
 
     function handleSaveSettings(): void {
+        if (!user) return;
         db.settings.put({
-            key: "charKeySize",
-            value: charKeySize
-        });
-        db.settings.put({
-            key: "rawIterations",
-            value: rawIterations
+            id: user.settingsID,
+            charKeySize: charKeySize,
+            rawIterations: rawIterations
         });
     }
 
@@ -174,7 +186,8 @@
 
     interface UserState {
         readonly username: string,
-        readonly emails: Array<EmailState>
+        readonly emails: Array<EmailState>,
+        readonly settings: Setting
     }
 
     interface EmailState {
@@ -209,9 +222,15 @@
     }
 
     async function saveUserState(user: WithID<User>): Promise<UserState> {
+        let setting = await db.settings.get(user.settingsID);
+        if (setting === undefined) setting = {
+            charKeySize: defaultCharKeySize,
+            rawIterations: defaultRawIterations
+        }
         const userState: UserState = {
             username: user.username,
-            emails: []
+            emails: [],
+            settings: setting
         };
         const emails = (await db.emails.where("userID").equals(user.id).toArray()) as WithID<Email>[];
         await Promise.all(emails.map(async (email) => {
@@ -245,9 +264,11 @@
     }
 
     async function loadUserState(user: UserState): Promise<void> {
-        const userID = (await db.users.add({
-            username: user.username
-        })) as Key;
+        const settingsID = await db.settings.add(user.settings) as Key;
+        const userID = await db.users.add({
+            username: user.username,
+            settingsID: settingsID
+        }) as Key;
         user.emails.forEach(async (email) => {
             loadEmailState(email, userID);
         });
@@ -336,7 +357,7 @@
     }
 </script>
 
-<div class="h-full flex flex-col justify-between bg-white dark:bg-gray-800">
+<div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800">
     <nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900">
         <div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white">
             <div>
@@ -350,20 +371,16 @@
                     Files
                 </div>
                 <div id="dropdownHoverFiles" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-32 dark:bg-gray-700">
-                    <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
-                        <li>
-                            <div>
-                                <button on:click="{()=>{fileInput.click()}}" class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Upload</button>
-                                <input type="file" on:change={handleImportFile} multiple={true} accept=".json,application/json" hidden={true} bind:this={fileInput}/>
-                            </div>
-                        </li>
-                        <li>
-                            <div>
-                                <button type="button" on:click={handleExportFile} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Download</button>
-                                <a hidden={true} download="my-password-gen.json" href={fileUrl} bind:this={exportFile}>Download</a>
-                            </div>
-                        </li>
-                    </ul>
+                    <div class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                        <div>
+                            <button on:click="{()=>{fileInput.click()}}" class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Upload</button>
+                            <input type="file" on:change={handleImportFile} multiple={true} accept=".json,application/json" hidden={true} bind:this={fileInput}/>
+                        </div>
+                        <div>
+                            <button type="button" on:click={handleExportFile} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Download</button>
+                            <a hidden={true} download="my-password-gen.json" href={fileUrl} bind:this={exportFile}>Download</a>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div hidden={!loggedIn}>
@@ -371,25 +388,25 @@
                     Settings
                 </div>
                 <div id="dropdownHoverSettings" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-64 dark:bg-gray-700">
-                    <ul class="pt-4 text-sm text-gray-700 dark:text-gray-200">
-                        <li class="px-2 py-2 flex justify-center">
+                    <div class="pt-4 text-sm text-gray-700 dark:text-gray-200">
+                        <div class="px-2 py-2 flex justify-center">
                             Iterations: {iterations}
-                        </li>
-                        <li class="w-full flex justify-center px-2 pb-2">
+                        </div>
+                        <div class="w-full flex justify-center px-2 pb-2">
                             <input type="range" min="0" max="1" step="any" bind:value={rawIterations} class="w-[90%]"/>
-                        </li>
-                        <li class="w-full flex justify-center px-2 py-2">
+                        </div>
+                        <div class="w-full flex justify-center px-2 py-2">
                             Length: {charKeySize}
-                        </li>
-                        <li class="w-full flex justify-center px-2 pb-2">
+                        </div>
+                        <div class="w-full flex justify-center px-2 pb-2">
                             <input type="range" min="8" max="100" step="1" bind:value={charKeySize} class="w-[90%]"/>
-                        </li>
-                        <li class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click="{handleSaveSettings}" on:keypress="{()=>{}}">
+                        </div>
+                        <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click={handleSaveSettings} on:keypress="{()=>{}}">
                             Save Settings
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
                     <div>
-                        <button type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg">
+                        <button type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg" on:click={logOut}>
                             Log out
                         </button>
                     </div>
@@ -447,7 +464,7 @@
                                 </svg>
                             </div>
                         </button>
-                        <input bind:value={emailText} aria-label="Email" type="text" list="emailList" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                        <input bind:value={emailText} aria-label="Email" type="text" list="emailList" placeholder="Email" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
                         <datalist id="emailList">
                             {#if $emails}
                             {#each $emails as email}
@@ -472,7 +489,7 @@
                                 </svg>
                             </div>
                         </button>
-                        <input bind:value={pageText} aria-label="page" type="text" list="pageList" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
+                        <input bind:value={pageText} aria-label="page" type="text" list="pageList" placeholder="Web page" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"/>
                         <datalist id="pageList">
                             {#if $pages}
                             {#each $pages as page}

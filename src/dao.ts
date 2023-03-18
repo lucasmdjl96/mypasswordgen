@@ -4,7 +4,8 @@ export type Key = number;
 
 export interface User {
     readonly id?: Key,
-    readonly username: string
+    readonly username: string,
+    readonly settingsID: Key
 }
 
 export interface Email {
@@ -20,11 +21,12 @@ export interface Page {
 }
 
 export interface Setting {
-    readonly key: string,
-    readonly value: unknown
+    readonly id?: Key,
+    readonly charKeySize: number,
+    readonly rawIterations: number
 }
 
-export type WithID<T extends User | Email | Page> = T & { readonly id: Key }
+export type WithID<T extends User | Email | Page | Setting> = T & { readonly id: Key }
 
 export class DB extends Dexie {
 
@@ -35,11 +37,11 @@ export class DB extends Dexie {
 
     constructor() {
         super("database");
-        this.version(2).stores({
+        this.version(1).stores({
             users: "++id, username",
             emails: "++id, userID",
             pages: "++id, emailID",
-            settings: "key"
+            settings: "++id"
         });
     }
 }
