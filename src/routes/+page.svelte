@@ -57,6 +57,9 @@
     let cookiesAccepted: boolean = typeof window !== "undefined" && localStorage.getItem("cookies") === "true";
     let closeCookiesButtonElement: HTMLElement;
 
+    let errorMessage: string | undefined;
+    let successMessage: string | undefined;
+
     $: loggedIn = user !== undefined;
 
     $: emails = liveQuery(async () => {
@@ -296,6 +299,14 @@
         });
     }
 
+    function handleCloseErrorMessage() {
+        errorMessage = undefined;
+    }
+
+    function handleCloseSuccessMessage() {
+        successMessage = undefined;
+    }
+
     interface SessionState {
         readonly users: Array<UserState>
     }
@@ -384,14 +395,26 @@
     function handleImportFile(): void {
         const currentTarget = fileInput;
         const files = currentTarget.files;
-        if (files === null || files === undefined || files.length === 0) return;
+        if (files === null || files.length === 0) return;
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
             const text = reader.result as string;
             const obj = JSON.parse(text);
-            if (isSessionState(obj)) importSessionState(obj);
-            else if (isUserState(obj)) importUserState(obj);
-            else if (isSettings(obj)) importSettings(obj);
+            if (isSessionState(obj)) {
+                await importSessionState(obj);
+                successMessage = "Application data imported successfully.";    
+            } else if (isUserState(obj)) {
+                await importUserState(obj);
+                successMessage = "User data imported successfully.";
+            } else if (isSettings(obj)) {
+                if (loggedIn) {
+                    await importSettings(obj);
+                    successMessage = "Settings imported successfully.";
+                } else {
+                    errorMessage = "Settings can only be imported after login.";
+                }
+            } else errorMessage = "File data not recognized.";
+            fileInput.value = "";
         }
         for (let file of files) {
             if (file.type !== "application/json") continue;
@@ -457,10 +480,10 @@
         };
     }
 
-    function importSessionState(state: SessionState): void {
-        state.users.forEach(async (user) => {
+    async function importSessionState(state: SessionState): Promise<void> {
+        await Promise.all(state.users.map((user) => {
             importUserState(user);
-        });
+        }));
     }
 
     async function importUserState(user: UserState): Promise<void> {
@@ -471,9 +494,9 @@
             username: user.username,
             settingsID: settingsID
         }) as Key;
-        user.emails.forEach(async (email) => {
+        await Promise.all(user.emails.map((email) => {
             importEmailState(email, userID);
-        });
+        }));
     }
 
     async function importEmailState(email: EmailState, userID: Key): Promise<void> {
@@ -481,13 +504,13 @@
             emailAddress: email.emailAddress,
             userID: userID
         })) as Key;
-        email.pages.forEach(async (page) => {
+        await Promise.all(email.pages.map((page) => {
             importPageState(page, emailID);
-        });
+        }));
     }
 
-    function importPageState(page: PageState, emailID: Key): void {
-        db.pages.add({
+    async function importPageState(page: PageState, emailID: Key): Promise<void> {
+        await db.pages.add({
             pageName: page.pageName,
             emailID: emailID
         });
@@ -505,8 +528,6 @@
         });
     }
 </script>
-
-{@debug cookiesAccepted}
 
 <div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800" on:keydown={handleKeyboardMain}>
     <nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900">
@@ -556,7 +577,7 @@
                             Iterations: {iterations}
                         </div>
                         <div class="w-full flex justify-center px-2 pb-2">
-                            <input type="range" min="0" max="1" step="any" bind:value={rawIterations} class="w-[90%]"/>
+                            <input type="range" min="0" max="1" step="0.05" bind:value={rawIterations} class="w-[90%]"/>
                         </div>
                         <div class="w-full flex justify-center px-2 py-2">
                             Length: {charKeySize}
@@ -577,6 +598,40 @@
             </div>
         </div>
     </nav>
+    <div class="h-0 w-[80%] fixed top-16 right-[10%] text-center">
+        {#if errorMessage !== undefined}
+        <div id="alert-2" class="flex p-4 mb-4 text-red-800 border-t-4 border-red-300 bg-red-50 dark:text-red-400 dark:bg-gray-700 dark:border-red-800 rounded-xl" role="alert">
+            <div class="ml-3 text-base font-medium w-full">
+                {errorMessage}
+            </div>
+            <button on:click={handleCloseErrorMessage} type="button" class="ml-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex h-8 w-8 dark:bg-gray-700 dark:text-red-400 dark:hover:bg-gray-600" aria-label="Close">
+                <span class="sr-only">
+                    Close
+                </span>
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        {/if}
+        {#if successMessage !== undefined}
+        <div id="alert-3" class="flex p-4 mb-4 text-green-800 border-t-4 border-green-300 bg-green-50 dark:text-green-400 dark:bg-gray-700 dark:border-green-800 rounded-xl" role="alert">
+            <div class="ml-3 text-base font-medium w-full">
+                {successMessage}
+            </div>
+            <button on:click={handleCloseSuccessMessage} type="button" class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex h-8 w-8 dark:bg-gray-700 dark:text-green-400 dark:hover:bg-gray-600" aria-label="Close">
+                <span class="sr-only">
+                    Close
+                </span>
+                <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        {/if}
+    </div>
     <div class="flex justify-center">
         <div class="w-screen max-w-md p-6 bg-gray-300 border border-gray-200 rounded-lg shadow dark:bg-gray-900 dark:border-gray-700 flex flex-col justify-between gap-4">
             <div class="mt-8 text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
