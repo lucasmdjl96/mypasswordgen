@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5" />
+		<meta content="#0f0f0f" name="theme-color"/>
+		<meta content="A lightweight password generator and manager." name="description"/>
+		<meta content="Password, Generator, Manager" name="keywords"/>
+		<title>MyPasswordGen</title>
+    	<link href="/manifest.json" rel="manifest">
+    	<link href="/apple-touch-icon.png" rel="apple-touch-icon">
+    	<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+    	<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+    	<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon">
+    	<link href="/favicon.ico" rel="icon" sizes="any">
+    	<link href="/icon.svg" rel="icon" sizes="any" type="image/svg+xml">
+    	<meta content="#00aba9" name="msapplication-TileColor">
+    	<meta content="/browserconfig.xml" name="msapplication-config">
+		<script>
+			if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+				document.documentElement.classList.add('dark');
+			} else {
+				document.documentElement.classList.remove('dark');
+			}
+		</script>
+		<meta http-equiv="content-security-policy" content="">
+		<link href="./_app/immutable/assets/_page.316af8a7.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/flowbite.1a628648.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.ba23bb57.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.2f401660.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.fb087793.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.7078091e.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/preload-helper.41c905a7.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/layout.svelte.ec82f168.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/_layout.js.984db11e.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/_layout.da46b06b.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/_page.svelte.11c623fc.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents" class="h-full overflow-hidden">
+
+
+<div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800"><nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900"><div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white"><div><a href="/about">About
+                </a></div>
+            <div><a href="/cookies">Privacy Policy
+                </a></div>
+            <div><div data-dropdown-toggle="dropdownHoverFiles" data-dropdown-trigger="hover">Files
+                </div>
+                <div id="dropdownHoverFiles" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"><div class="text-sm text-gray-700 dark:text-gray-200"><div><button class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-t-lg">Upload</button>
+                            <input type="file" multiple accept=".json,application/json" hidden></div>
+                        <div><button type="button" class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg">Download</button>
+                            <a hidden download="my-password-gen.json">Download</a></div></div>
+                    </div></div>
+            <div hidden><div data-dropdown-toggle="dropdownHoverSettings" data-dropdown-trigger="hover">Settings
+                </div>
+                <div id="dropdownHoverSettings" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-64 dark:bg-gray-700"><div class="pt-4 text-sm text-gray-700 dark:text-gray-200"><div class="px-2 py-2 flex justify-center">Iterations: 10000</div>
+                        <div class="w-full flex justify-center px-2 pb-2"><input type="range" min="0" max="1" step="0.05" class="w-[90%]" value="0"></div>
+                        <div class="w-full flex justify-center px-2 py-2">Length: 256 (43 characters)
+                        </div>
+                        <div class="w-full flex justify-center px-2 pb-2"><input type="range" min="48" max="600" step="1" class="w-[90%]" value="256"></div>
+                        <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Restore Defaults
+                        </div>
+                        <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Save Settings
+                        </div></div>
+                    <div><button type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg">Log out
+                        </button></div></div></div></div></nav>
+    <div class="h-0 w-[80%] fixed top-16 right-[10%] text-center">
+        </div>
+    <div class="flex justify-center"><div class="w-screen max-w-md p-6 bg-gray-300 border border-gray-200 rounded-lg shadow dark:bg-gray-900 dark:border-gray-700 flex flex-col justify-between gap-4"><div class="mt-8 text-4xl font-bold tracking-tight text-gray-900 dark:text-white"><h1 class="text-center">MyPasswordGen
+                </h1></div>
+            <div class="flex flex-col justify-around gap-4 items-center"><div class="flex flex-col justify-around gap-4 w-full"><div class="flex justify-center"><div class="w-full pt-8 px-8">
+                            <input autofocus type="text" aria-label="username" placeholder="Username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value=""></div></div>
+                    <div class="flex justify-center"><div class="relative w-full pt-8 px-8"><input id="password" type="password" aria-label="password" placeholder="Password" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value="">
+                            <div class="absolute inset-y-0 right-0 flex items-center pt-8"><svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div></div></div></div>
+                <div class="flex justify-around gap-8 m-8 w-[80%]"><button type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Log in</button>
+                    <button type="button" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Register</button></div></div></div></div>
+    
+    <footer class="p-4 bg-gray-300 shadow flex items-center justify-end dark:bg-gray-900"><div><form action="https://www.paypal.com/donate" method="post" target="_top"><input type="hidden" name="hosted_button_id" value="WCRYMKW6UAJRC">
+                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button"></form></div></footer>
+</div>
+
+
+			
+			<script>
+				{
+					__sveltekit_87sqog = {
+						env: {},
+						base: new URL(".", location).pathname.slice(0, -1),
+						element: document.currentScript.parentElement
+					};
+
+					const data = [null,null];
+
+					Promise.all([
+						import("./_app/immutable/entry/start.ba23bb57.js"),
+						import("./_app/immutable/entry/app.7078091e.js")
+					]).then(([kit, app]) => {
+						kit.start(app, __sveltekit_87sqog.element, {
+							node_ids: [0, 2],
+							data,
+							form: null,
+							error: null
+						});
+					});
+
+					if ('serviceWorker' in navigator) {
+						addEventListener('load', function () {
+							navigator.serviceWorker.register('./service-worker.js');
+						});
+					}
+				}
+			</script>
+		</div>
+		<script src="../node_modules/flowbite/dist/flowbite.min.js"></script>
+	</body>
+</html>
