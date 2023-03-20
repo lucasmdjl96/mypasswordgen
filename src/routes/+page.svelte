@@ -160,7 +160,10 @@
     async function handleRegister(): Promise<void> {
         if (username === "" || !browser) return;
         const result = await db.users.where("username").equals(username).toArray();
-        if (result.length > 0) return;
+        if (result.length > 0) {
+            errorMessage = "Username already exists.";
+            return;
+        }
         const settingsID = await db.settings.add({
             bitKeySize: defaultBitKeySize,
             rawIterations: defaultRawIterations
@@ -175,7 +178,10 @@
     async function handleLogIn(): Promise<void> {
         if (username === "" || !browser) return;
         const result = await db.users.where("username").equals(username).toArray();
-        if (result.length === 0) return;
+        if (result.length === 0) {
+            errorMessage = "Username not found.";
+            return;
+        }
         user = result[0] as WithID<User>
         settings = liveQuery(async () => {
             const settings = await db.settings.get(result[0].settingsID);
@@ -187,6 +193,8 @@
             rawIterations = value.rawIterations;
         });
         closeCookiesButtonElement?.click();
+        errorMessage = undefined;
+        successMessage = undefined;
     }
 
     function handleLogOut(): void {
@@ -196,6 +204,8 @@
         showPassword = false;
         emailText = "";
         settings = undefined;
+        errorMessage = undefined;
+        successMessage = undefined;
     }
 
     function onEmailTextChange(_value: typeof emailText): void {
