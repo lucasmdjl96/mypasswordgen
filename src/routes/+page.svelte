@@ -299,6 +299,11 @@
         });
     }
 
+    function handleRestoreDefaultSettings(): void {
+        charKeySize = defaultCharKeySize;
+        rawIterations = defaultRawIterations;
+    }
+
     function handleCloseErrorMessage() {
         errorMessage = undefined;
     }
@@ -584,6 +589,9 @@
                         </div>
                         <div class="w-full flex justify-center px-2 pb-2">
                             <input type="range" min="8" max="100" step="1" bind:value={charKeySize} class="w-[90%]"/>
+                        </div>
+                        <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click={handleRestoreDefaultSettings} on:keypress="{()=>{}}">
+                            Restore Defaults
                         </div>
                         <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click={handleSaveSettings} on:keypress="{()=>{}}">
                             Save Settings
