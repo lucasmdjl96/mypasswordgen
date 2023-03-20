@@ -7,6 +7,7 @@
     import type { WorkerRequest, WorkerResponse } from "../lib/worker";
     import "../app.css";
     import { base } from "$app/paths";
+    import { fade } from 'svelte/transition';
 
     let username: string = "";
     let showPassword = false;
@@ -640,7 +641,7 @@
     </nav>
     <div class="h-0 w-[80%] fixed top-16 right-[10%] text-center">
         {#if errorMessage !== undefined}
-        <div id="alert-2" class="flex p-4 mb-4 text-red-800 border-t-4 border-red-300 bg-red-50 dark:text-red-400 dark:bg-gray-700 dark:border-red-800 rounded-xl" role="alert">
+        <div transition:fade="{{ duration: 200 }}" id="alert-2" class="flex p-4 mb-4 text-red-800 border-t-4 border-red-300 bg-red-50 dark:text-red-400 dark:bg-gray-700 dark:border-red-800 rounded-xl" role="alert">
             <div class="ml-3 text-base font-medium w-full">
                 {errorMessage}
             </div>
@@ -656,7 +657,7 @@
         </div>
         {/if}
         {#if successMessage !== undefined}
-        <div id="alert-3" class="flex p-4 mb-4 text-green-800 border-t-4 border-green-300 bg-green-50 dark:text-green-400 dark:bg-gray-700 dark:border-green-800 rounded-xl" role="alert">
+        <div transition:fade="{{ duration: 200 }}" id="alert-3" class="flex p-4 mb-4 text-green-800 border-t-4 border-green-300 bg-green-50 dark:text-green-400 dark:bg-gray-700 dark:border-green-800 rounded-xl" role="alert">
             <div class="ml-3 text-base font-medium w-full">
                 {successMessage}
             </div>
@@ -769,7 +770,7 @@
                 </div>
                 <div class="m-8 w-full flex flex-col items-center">
                     <div class="w-full flex justify-center">
-                        <button bind:this={generateButtonElement} type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} on:keydown={handleKeyboardGenerate} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
+                        <button bind:this={generateButtonElement} type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} on:keydown={handleKeyboardGenerate} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
                     </div>
                     {#if generating || password !== undefined}
                     <div class="w-full mt-12 p-8 bg-gray-100 border border-gray-200 rounded-lg shadow dark:bg-black text-black dark:text-orange-500 dark:border-gray-700 flex flex-row justify-center items-center">
