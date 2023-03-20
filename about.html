@@ -7,15 +7,6 @@
 		<meta content="A lightweight password generator and manager." name="description"/>
 		<meta content="Password, Generator, Manager" name="keywords"/>
 		<title>MyPasswordGen</title>
-    	<link href="/manifest.json" rel="manifest">
-    	<link href="/apple-touch-icon.png" rel="apple-touch-icon">
-    	<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
-    	<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
-    	<link color="#5bbad5" href="/safari-pinned-tab.svg" rel="mask-icon">
-    	<link href="/favicon.ico" rel="icon" sizes="any">
-    	<link href="/icon.svg" rel="icon" sizes="any" type="image/svg+xml">
-    	<meta content="#00aba9" name="msapplication-TileColor">
-    	<meta content="/browserconfig.xml" name="msapplication-config">
 		<script>
 			if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
 				document.documentElement.classList.add('dark');
@@ -24,25 +15,26 @@
 			}
 		</script>
 		<meta http-equiv="content-security-policy" content="">
-		<link href="./_app/immutable/assets/_page.76340e48.css" rel="stylesheet">
-		<link href="./_app/immutable/assets/flowbite.1a628648.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.ba23bb57.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.2f401660.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.fb087793.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.7078091e.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/preload-helper.41c905a7.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/layout.svelte.ec82f168.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/_layout.js.984db11e.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/_layout.da46b06b.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/about-page.svelte.516b604e.js">
+		<link href="./app/immutable/assets/_page.76340e48.css" rel="stylesheet">
+		<link href="./app/immutable/assets/flowbite.1a628648.css" rel="stylesheet">
+		<link rel="modulepreload" href="./app/immutable/entry/start.0c5ad190.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/index.c05d037a.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/singletons.8cef97ea.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/paths.55ce5cc8.js">
+		<link rel="modulepreload" href="./app/immutable/entry/app.ef760526.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/preload-helper.41c905a7.js">
+		<link rel="modulepreload" href="./app/immutable/entry/layout.svelte.a8916b40.js">
+		<link rel="modulepreload" href="./app/immutable/entry/_layout.js.984db11e.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/_layout.da46b06b.js">
+		<link rel="modulepreload" href="./app/immutable/entry/about-page.svelte.4dc60bae.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents" class="h-full overflow-hidden">
 
 
-<div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800 overflow-y-auto"><nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900"><div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white"><div><a href="/">Home
+<div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800 overflow-y-auto"><nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900"><div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white"><div><a href="/mypasswordgen">Home
                 </a></div>
-            <div><a href="/cookies">Privacy Policy
+            <div><a href="/mypasswordgen/cookies">Privacy Policy
                 </a></div></div></nav>
     <div class="text-center"><h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-black md:text-5xl lg:text-6xl dark:text-white">About this app
         </h1>
@@ -137,8 +129,9 @@
 			
 			<script>
 				{
-					__sveltekit_87sqog = {
+					__sveltekit_1k0dl6j = {
 						env: {},
+						assets: "/mypasswordgen",
 						base: new URL(".", location).pathname.slice(0, -1),
 						element: document.currentScript.parentElement
 					};
@@ -146,10 +139,10 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.ba23bb57.js"),
-						import("./_app/immutable/entry/app.7078091e.js")
+						import("./app/immutable/entry/start.0c5ad190.js"),
+						import("./app/immutable/entry/app.ef760526.js")
 					]).then(([kit, app]) => {
-						kit.start(app, __sveltekit_87sqog.element, {
+						kit.start(app, __sveltekit_1k0dl6j.element, {
 							node_ids: [0, 3],
 							data,
 							form: null,
