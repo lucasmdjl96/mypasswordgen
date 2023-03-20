@@ -3,8 +3,14 @@
     import "flowbite/dist/flowbite.css";
 
     function handleDeleteData() {
-        window.indexedDB.deleteDatabase("database");
         localStorage.clear();
+        window.indexedDB.deleteDatabase("database");
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+            registration.unregister();
+        }
+        })
+        fetch("/deleteCache");
     }
 </script>
 
@@ -29,17 +35,21 @@
         </div>
     </nav>
     <div class="text-center">
-        <h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+        <h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight text-black md:text-5xl lg:text-6xl dark:text-white">
             Cookie Policy
         </h1>
-        <p class="mb-3 font-light text-gray-500 dark:text-gray-400">
-            Cookies and related technologies allow us to provide a better user experience for you.
-            Your usernames, email addresses, website names and settings are stored in the indexedDB in your browser.
-            We also use service workers to store and retrieve assets to speed up page load.
-        </p>
-        <p class="mb-3 font-light text-gray-500 dark:text-gray-400">
-            You can delete all data stored at any time by clicking on "Delete Data" above.
-        </p>
+        <div class="flex justify-center">
+            <div class="text-justify w-[80%]">
+                <p class="mb-3 font-light text-black dark:text-gray-100">
+                    Cookies and related technologies allow us to provide a better user experience for you.
+                    Your usernames, email addresses, website names and settings are stored in the indexedDB in your browser.
+                    We also use service workers to store and retrieve assets to speed up page load.
+                </p>
+                <p class="mb-3 font-light text-black dark:text-gray-100">
+                    You can delete all data stored at any time by clicking on "Delete Data" above.
+                </p>
+            </div>
+        </div>
     </div>
     <footer class="p-4 bg-gray-300 shadow flex items-center justify-end dark:bg-gray-900">
         <div>
