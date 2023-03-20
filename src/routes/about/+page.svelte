@@ -1,18 +1,30 @@
 <script lang="ts">
     import "../../app.css";
-    import "flowbite/dist/flowbite.css";
+    import { base } from "$app/paths";
 </script>
+
+<svelte:head>
+    <link href="{base}/manifest.json" rel="manifest"/>
+    <link href="{base}/apple-touch-icon.png" rel="apple-touch-icon"/>
+    <link href="{base}/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+    <link href="{base}/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+    <link color="#5bbad5" href="{base}/safari-pinned-tab.svg" rel="mask-icon"/>
+    <link href="{base}/favicon.ico" rel="icon" sizes="any"/>
+    <link href="{base}/icon.svg" rel="icon" sizes="any" type="image/svg+xml"/>
+    <meta content="#00aba9" name="msapplication-TileColor"/>
+    <meta content="{base}/browserconfig.xml" name="msapplication-config"/>
+</svelte:head>
 
 <div class="h-full flex flex-col justify-between bg-blue-300 dark:bg-gray-800 overflow-y-auto">
     <nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900">
         <div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white">
             <div>
-                <a href="/">
+                <a href="{base}">
                     Home
                 </a>
             </div>
             <div>
-                <a href="/cookies">
+                <a href="{base}/cookies">
                     Privacy Policy
                 </a>
             </div>

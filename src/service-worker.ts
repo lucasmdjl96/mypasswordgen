@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    if (event.request.url === `${self.location.origin}/deleteCache`) {
+    if (event.request.url.endsWith("/deleteCache")) {
         event.respondWith(
             (async function() {
                 await caches.delete(CACHE);
@@ -73,8 +73,6 @@ self.addEventListener('fetch', (event) => {
                 return cache.match(event.request);
             }
         }
-        respond().then((response) => {
-            if (response !== undefined) event.respondWith(response);
-        });
+        event.respondWith(respond());
     }
 });
