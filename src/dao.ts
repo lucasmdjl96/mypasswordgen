@@ -22,7 +22,7 @@ export interface Page {
 
 export interface Setting {
     readonly id?: Key,
-    readonly charKeySize: number,
+    readonly bitKeySize: number,
     readonly rawIterations: number
 }
 

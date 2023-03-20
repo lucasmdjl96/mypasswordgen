@@ -19,8 +19,8 @@
     let pages: Observable<Array<Page>>
     let pageText: string = "";
     let pageSelected: WithID<Page> | undefined;
-    const defaultCharKeySize = 42.6;
-    let charKeySize: number = defaultCharKeySize;
+    const defaultBitKeySize = 256;
+    let bitKeySize: number = defaultBitKeySize;
     let keySize: number;
     const defaultRawIterations = 0;
     let rawIterations: number = defaultRawIterations;
@@ -92,7 +92,7 @@
     });
     $: onPageTextChange(pageText);
 
-    $: keySize = charKeySize * 6 / 32;
+    $: keySize = bitKeySize / 32;
     $: iterations = Math.floor(10000 * (100 ** rawIterations));
 
     onMount(loadWorker);
@@ -162,7 +162,7 @@
         const result = await db.users.where("username").equals(username).toArray();
         if (result.length > 0) return;
         const settingsID = await db.settings.add({
-            charKeySize: defaultCharKeySize,
+            bitKeySize: defaultBitKeySize,
             rawIterations: defaultRawIterations
         }) as Key;
         await db.users.add({
@@ -183,7 +183,7 @@
         });
         settings.subscribe((value) => {
             if (value === undefined) return;
-            charKeySize = value.charKeySize;
+            bitKeySize = value.bitKeySize;
             rawIterations = value.rawIterations;
         });
         closeCookiesButtonElement?.click();
@@ -261,12 +261,22 @@
             pageDeleteButtonElement?.click();
         } else if (event.key === "Enter") {
             if (pageSelected !== undefined) {
-                generateButtonElement?.click();
+                generateButtonElement?.focus();
             } else {
                 pageAddButtonElement?.click();
             }
         } else if (event.ctrlKey && event.key === "ArrowUp") {
             emailInputElement?.focus();
+        } else if (event.ctrlKey && event.key === "ArrowDown") {
+            generateButtonElement?.focus();
+        } else if (event.ctrlKey && event.key === "c") {
+            copyButtonElement?.click();
+        }
+    }
+
+    function handleKeyboardGenerate(event: KeyboardEvent): void {
+        if (event.ctrlKey && event.key === "ArrowUp") {
+            pageInputElement?.focus();
         } else if (event.ctrlKey && event.key === "c") {
             copyButtonElement?.click();
         }
@@ -294,13 +304,13 @@
         if (user === undefined) return;
         db.settings.put({
             id: user.settingsID,
-            charKeySize: charKeySize,
+            bitKeySize: bitKeySize,
             rawIterations: rawIterations
         });
     }
 
     function handleRestoreDefaultSettings(): void {
-        charKeySize = defaultCharKeySize;
+        bitKeySize = defaultBitKeySize;
         rawIterations = defaultRawIterations;
     }
 
@@ -350,7 +360,7 @@
     function isSettings(obj: unknown): obj is Settings {
         if (obj === null || obj === undefined) return false;
         const settings = obj as Settings;
-        if (typeof settings.charKeySize !== "number") return false;
+        if (typeof settings.bitKeySize !== "number") return false;
         return typeof settings.rawIterations === "number";
     }
 
@@ -442,7 +452,7 @@
     async function exportUserState(user: WithID<User>): Promise<UserState> {
         let settingsDB = await db.settings.get(user.settingsID);
         settingsDB = {
-            charKeySize: settingsDB === undefined ? defaultCharKeySize : settingsDB.charKeySize,
+            bitKeySize: settingsDB === undefined ? defaultBitKeySize : settingsDB.bitKeySize,
             rawIterations: settingsDB === undefined ? defaultRawIterations : settingsDB.rawIterations
         };
         const userState: UserState = {
@@ -480,7 +490,7 @@
         const settings = await db.settings.get(user.settingsID);
         if (settings === undefined) return;
         return {
-            charKeySize: settings.charKeySize,
+            bitKeySize: settings.bitKeySize,
             rawIterations: settings.rawIterations
         };
     }
@@ -528,7 +538,7 @@
         settingsDB = settingsDB as WithID<Settings>
         db.settings.put({
             id: settingsDB.id,
-            charKeySize: settings.charKeySize,
+            bitKeySize: settings.bitKeySize,
             rawIterations: settings.rawIterations
         });
     }
@@ -585,10 +595,10 @@
                             <input type="range" min="0" max="1" step="0.05" bind:value={rawIterations} class="w-[90%]"/>
                         </div>
                         <div class="w-full flex justify-center px-2 py-2">
-                            Length: {charKeySize}
+                            Length: {bitKeySize} ({Math.ceil(bitKeySize / 6)} characters)
                         </div>
                         <div class="w-full flex justify-center px-2 pb-2">
-                            <input type="range" min="8" max="100" step="1" bind:value={charKeySize} class="w-[90%]"/>
+                            <input type="range" min="48" max="600" step="1" bind:value={bitKeySize} class="w-[90%]"/>
                         </div>
                         <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click={handleRestoreDefaultSettings} on:keypress="{()=>{}}">
                             Restore Defaults
@@ -737,7 +747,7 @@
                 </div>
                 <div class="m-8 w-full flex flex-col items-center">
                     <div class="w-full flex justify-center">
-                        <button bind:this={generateButtonElement} type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
+                        <button bind:this={generateButtonElement} type="button" disabled={pageSelected === undefined} on:click={handleComputePassword} on:keydown={handleKeyboardGenerate} class="w-[80%] disabled:hover:cursor-not-allowed text-white enabled:bg-blue-700 disabled:bg-blue-400 enabled:hover:bg-blue-800 enabled:enabled:focus:ring-4 enabled:focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 enabled:dark:bg-blue-600 enabled:dark:hover:bg-blue-700 enabled:focus:outline-none enabled:dark:focus:ring-blue-800">Generate</button>
                     </div>
                     {#if generating || password !== undefined}
                     <div class="w-full mt-12 p-8 bg-gray-100 border border-gray-200 rounded-lg shadow dark:bg-black text-black dark:text-orange-500 dark:border-gray-700 flex flex-row justify-center items-center">
