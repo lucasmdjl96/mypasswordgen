@@ -73,7 +73,8 @@ self.addEventListener('fetch', (event) => {
                 return cache.match(event.request);
             }
         }
-
-        event.respondWith(respond());
+        respond().then((response) => {
+            if (response !== undefined) event.respondWith(response);
+        });
     }
 });

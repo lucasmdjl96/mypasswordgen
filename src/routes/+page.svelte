@@ -19,7 +19,7 @@
     let pages: Observable<Array<Page>>
     let pageText: string = "";
     let pageSelected: WithID<Page> | undefined;
-    const defaultCharKeySize = 40;
+    const defaultCharKeySize = 42.6;
     let charKeySize: number = defaultCharKeySize;
     let keySize: number;
     const defaultRawIterations = 0;

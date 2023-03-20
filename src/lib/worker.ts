@@ -26,11 +26,9 @@ onmessage = (event: MessageEvent<WorkerRequest>) => {
         id: event.data.id,
         password: CryptoJS.PBKDF2(
             masterPassword, 
-`
-${username}
+`${username}
 ${emailAddress}
-${pageName}
-`,             
+${pageName}`,             
             {
                 keySize: keySize,
                 iterations: iterations,
