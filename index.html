@@ -15,18 +15,18 @@
 			}
 		</script>
 		<meta http-equiv="content-security-policy" content="">
-		<link href="./mypasswordgen/app/immutable/assets/_page.316af8a7.css" rel="stylesheet">
-		<link href="./mypasswordgen/app/immutable/assets/flowbite.1a628648.css" rel="stylesheet">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/entry/start.ff1dd159.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/chunks/index.c05d037a.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/chunks/singletons.5afe8d26.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/chunks/paths.9c1c39de.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/entry/app.23d30503.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/chunks/preload-helper.41c905a7.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/entry/layout.svelte.a8916b40.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/entry/_layout.js.984db11e.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/chunks/_layout.da46b06b.js">
-		<link rel="modulepreload" href="./mypasswordgen/app/immutable/entry/_page.svelte.a5145fad.js"><!-- HEAD_svelte-1ha25ck_START --><link href="/mypasswordgen/manifest.json" rel="manifest"><link href="/mypasswordgen/apple-touch-icon.png" rel="apple-touch-icon"><link href="/mypasswordgen/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"><link href="/mypasswordgen/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"><link color="#5bbad5" href="/mypasswordgen/safari-pinned-tab.svg" rel="mask-icon"><link href="/mypasswordgen/favicon.ico" rel="icon" sizes="any"><link href="/mypasswordgen/icon.svg" rel="icon" sizes="any" type="image/svg+xml"><meta content="#00aba9" name="msapplication-TileColor"><meta content="/mypasswordgen/browserconfig.xml" name="msapplication-config"><link href="/mypasswordgen" rel="stylesheet"><!-- HEAD_svelte-1ha25ck_END -->
+		<link href="./app/immutable/assets/_page.2a8c6188.css" rel="stylesheet">
+		<link href="./app/immutable/assets/flowbite.1a628648.css" rel="stylesheet">
+		<link rel="modulepreload" href="./app/immutable/entry/start.4e36c459.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/index.c05d037a.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/singletons.ff43b899.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/paths.47353643.js">
+		<link rel="modulepreload" href="./app/immutable/entry/app.410edc44.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/preload-helper.41c905a7.js">
+		<link rel="modulepreload" href="./app/immutable/entry/layout.svelte.a8916b40.js">
+		<link rel="modulepreload" href="./app/immutable/entry/_layout.js.b42fa9ea.js">
+		<link rel="modulepreload" href="./app/immutable/chunks/_layout.af12d980.js">
+		<link rel="modulepreload" href="./app/immutable/entry/_page.svelte.2ea8ee1d.js"><!-- HEAD_svelte-1ha25ck_START --><link href="/mypasswordgen/manifest.json" rel="manifest"><link href="/mypasswordgen/apple-touch-icon.png" rel="apple-touch-icon"><link href="/mypasswordgen/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"><link href="/mypasswordgen/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"><link color="#5bbad5" href="/mypasswordgen/safari-pinned-tab.svg" rel="mask-icon"><link href="/mypasswordgen/favicon.ico" rel="icon" sizes="any"><link href="/mypasswordgen/icon.svg" rel="icon" sizes="any" type="image/svg+xml"><meta content="#00aba9" name="msapplication-TileColor"><meta content="/mypasswordgen/browserconfig.xml" name="msapplication-config"><link href="/mypasswordgen" rel="stylesheet"><!-- HEAD_svelte-1ha25ck_END -->
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents" class="h-full overflow-hidden">
@@ -77,20 +77,20 @@
 			
 			<script>
 				{
-					__sveltekit_116dxrs = {
+					__sveltekit_1m5vtq = {
 						env: {},
 						assets: "/mypasswordgen",
-						base: new URL("./mypasswordgen", location).pathname,
+						base: new URL(".", location).pathname.slice(0, -1),
 						element: document.currentScript.parentElement
 					};
 
 					const data = [null,null];
 
 					Promise.all([
-						import("./mypasswordgen/app/immutable/entry/start.ff1dd159.js"),
-						import("./mypasswordgen/app/immutable/entry/app.23d30503.js")
+						import("./app/immutable/entry/start.4e36c459.js"),
+						import("./app/immutable/entry/app.410edc44.js")
 					]).then(([kit, app]) => {
-						kit.start(app, __sveltekit_116dxrs.element, {
+						kit.start(app, __sveltekit_1m5vtq.element, {
 							node_ids: [0, 2],
 							data,
 							form: null,
@@ -100,7 +100,7 @@
 
 					if ('serviceWorker' in navigator) {
 						addEventListener('load', function () {
-							navigator.serviceWorker.register('./mypasswordgen/service-worker.js');
+							navigator.serviceWorker.register('./service-worker.js');
 						});
 					}
 				}
