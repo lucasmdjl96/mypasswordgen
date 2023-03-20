@@ -1,27 +1,27 @@
-const m = [
-  "/mypasswordgen/app/immutable/entry/app.7aa8947b.js",
-  "/mypasswordgen/app/immutable/chunks/0.c652a2f3.js",
-  "/mypasswordgen/app/immutable/chunks/1.8a0eb897.js",
-  "/mypasswordgen/app/immutable/chunks/2.ec4f1efb.js",
-  "/mypasswordgen/app/immutable/chunks/3.9c881956.js",
-  "/mypasswordgen/app/immutable/chunks/4.a838bb3f.js",
-  "/mypasswordgen/app/immutable/chunks/_layout.af12d980.js",
-  "/mypasswordgen/app/immutable/chunks/index.31605c7e.js",
-  "/mypasswordgen/app/immutable/chunks/paths.8cf225f3.js",
-  "/mypasswordgen/app/immutable/chunks/preload-helper.41c905a7.js",
-  "/mypasswordgen/app/immutable/chunks/singletons.0b3bd38f.js",
-  "/mypasswordgen/app/immutable/assets/flowbite.1a628648.css",
-  "/mypasswordgen/app/immutable/entry/start.4548f29d.js",
-  "/mypasswordgen/app/immutable/entry/error.svelte.065920d7.js",
-  "/mypasswordgen/app/immutable/entry/layout.svelte.0553304f.js",
-  "/mypasswordgen/app/immutable/chunks/worker.a658c318.js",
-  "/mypasswordgen/app/immutable/entry/_layout.js.b42fa9ea.js",
-  "/mypasswordgen/app/immutable/assets/_page.2a8c6188.css",
-  "/mypasswordgen/app/immutable/entry/_page.svelte.f6298986.js",
-  "/mypasswordgen/app/immutable/assets/_page.76340e48.css",
-  "/mypasswordgen/app/immutable/entry/about-page.svelte.b1509fab.js",
-  "/mypasswordgen/app/immutable/entry/cookies-page.svelte.1f1cddf3.js"
-], r = [
+const r = [
+  "/mypasswordgen/_app/immutable/entry/app.8024f34a.js",
+  "/mypasswordgen/_app/immutable/chunks/0.12851dba.js",
+  "/mypasswordgen/_app/immutable/chunks/1.559c878d.js",
+  "/mypasswordgen/_app/immutable/chunks/2.cca0efae.js",
+  "/mypasswordgen/_app/immutable/chunks/3.72d23ce6.js",
+  "/mypasswordgen/_app/immutable/chunks/4.217a0903.js",
+  "/mypasswordgen/_app/immutable/chunks/_layout.73540493.js",
+  "/mypasswordgen/_app/immutable/chunks/index.c05d037a.js",
+  "/mypasswordgen/_app/immutable/chunks/paths.d46790db.js",
+  "/mypasswordgen/_app/immutable/chunks/preload-helper.41c905a7.js",
+  "/mypasswordgen/_app/immutable/chunks/singletons.11231189.js",
+  "/mypasswordgen/_app/immutable/assets/app.ffd536f2.css",
+  "/mypasswordgen/_app/immutable/entry/start.7baa8041.js",
+  "/mypasswordgen/_app/immutable/entry/error.svelte.5187a4cf.js",
+  "/mypasswordgen/_app/immutable/entry/layout.svelte.a8916b40.js",
+  "/mypasswordgen/_app/immutable/chunks/worker.a658c318.js",
+  "/mypasswordgen/_app/immutable/entry/_layout.js.50a6b084.js",
+  "/mypasswordgen/_app/immutable/assets/_page.316af8a7.css",
+  "/mypasswordgen/_app/immutable/entry/_page.svelte.bb9a5cad.js",
+  "/mypasswordgen/_app/immutable/assets/_page.76340e48.css",
+  "/mypasswordgen/_app/immutable/entry/about-page.svelte.6df49726.js",
+  "/mypasswordgen/_app/immutable/entry/cookies-page.svelte.0712d40d.js"
+], o = [
   "/mypasswordgen/.nojekyll",
   "/mypasswordgen/android-chrome-192x192.png",
   "/mypasswordgen/android-chrome-512x512.png",
@@ -38,17 +38,16 @@ const m = [
   "/mypasswordgen/mstile-310x150.png",
   "/mypasswordgen/mstile-310x310.png",
   "/mypasswordgen/mstile-70x70.png",
-  "/mypasswordgen/node_modules/flowbite/dist/flowbite.min.js",
   "/mypasswordgen/safari-pinned-tab.svg"
-], c = "1679325950431", n = `cache-${c}`, o = [
-  ...m,
+], c = "1679348220913", n = `cache-${c}`, m = [
+  ...r,
   // the app itself
-  ...r
+  ...o
   // everything in `static`
 ];
 self.addEventListener("install", (s) => {
   async function e() {
-    await (await caches.open(n)).addAll(o);
+    await (await caches.open(n)).addAll(m);
   }
   s.waitUntil(e());
 });
@@ -59,8 +58,8 @@ self.addEventListener("activate", (s) => {
   }
   s.waitUntil(e());
 });
-self.addEventListener("fetch", async (s) => {
-  if (s.request.url === `${self.location.origin}/deleteCache`) {
+self.addEventListener("fetch", (s) => {
+  if (s.request.url.endsWith("/deleteCache")) {
     s.respondWith(
       async function() {
         return await caches.delete(n), new Response(null, {
@@ -73,14 +72,14 @@ self.addEventListener("fetch", async (s) => {
     if (s.request.method !== "GET")
       return;
     async function e() {
-      const a = new URL(s.request.url), t = await caches.open(n);
-      if (o.includes(a.pathname))
-        return t.match(s.request);
+      const a = new URL(s.request.url), p = await caches.open(n);
+      if (m.includes(a.pathname))
+        return p.match(s.request);
       try {
-        const p = await fetch(s.request);
-        return p.status === 200 && t.put(s.request, p.clone()), p;
+        const t = await fetch(s.request);
+        return t.status === 200 && p.put(s.request, t.clone()), t;
       } catch {
-        return t.match(s.request);
+        return p.match(s.request);
       }
     }
     s.respondWith(e());
