@@ -19,7 +19,7 @@
     <nav class="bg-gray-300 border-gray-200 px-2 sm:px-4 py-4 dark:bg-gray-900">
         <div class="w-full flex items-center justify-end gap-6 md:gap-12 pr-4 text-gray-900 dark:text-white">
             <div>
-                <a href="{base}">
+                <a href="{base}/">
                     Home
                 </a>
             </div>
