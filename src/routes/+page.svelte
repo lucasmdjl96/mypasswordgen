@@ -215,6 +215,10 @@
 
     async function handleRemoveEmail(): Promise<void> {
         if (emailSelected === undefined || !browser) return;
+        const pages = (await db.pages.where("emailID").equals(emailSelected.id).toArray()) as WithID<Page>[];
+        await Promise.all(pages.map((page) => {
+            db.pages.delete(page.id);
+        }));
         await db.emails.delete(emailSelected.id);
         emailText = "";
         await tick();
