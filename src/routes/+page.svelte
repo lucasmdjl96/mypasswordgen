@@ -209,6 +209,21 @@
         successMessage = undefined;
     }
 
+    async function handleRemoveUser(): Promise<void> {
+        if (user === undefined || !browser) return;
+        const emails = (await db.emails.where("userID").equals(user.id).toArray()) as WithID<Email>[];
+        await Promise.all(emails.map(async (email) => {
+            const pages = (await db.pages.where("emailID").equals(email.id).toArray()) as WithID<Page>[];
+            await Promise.all(pages.map((page) => {
+                db.pages.delete(page.id);
+            }));
+            db.emails.delete(email.id);
+        }));
+        await db.users.delete(user.id);
+        await db.settings.delete(user.settingsID);
+        handleLogOut();
+    } 
+
     function onEmailTextChange(_value: typeof emailText): void {
         pageText = "";
     }
@@ -595,12 +610,14 @@
                 </div>
                 <div id="dropdownHoverFiles" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
                     <div class="text-sm text-gray-700 dark:text-gray-200">
+                        {#if !loggedIn}
                         <div>
                             <button on:click="{()=>{fileInput.click()}}" class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-t-lg">Upload</button>
                             <input type="file" on:change={handleImportFile} multiple={true} accept=".json,application/json" hidden={true} bind:this={fileInput}/>
                         </div>
+                        {/if}
                         <div>
-                            <button type="button" on:click={handleExportFile} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" class:rounded-b-lg={!loggedIn}>Download</button>
+                            <button type="button" on:click={handleExportFile} class="w-full block px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white { loggedIn ? 'rounded-t-lg' : '' }" class:rounded-b-lg={!loggedIn}>Download</button>
                             <a hidden={true} download="my-password-gen.json" href={fileUrl} bind:this={exportFile}>Download</a>
                         </div>
                     </div>
@@ -640,9 +657,14 @@
                         </div>
                     </div>
                     <div>
-                        <button bind:this={logoutButtonElement} type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white rounded-b-lg" on:click={handleLogOut}>
+                        <button bind:this={logoutButtonElement} type="button" class="w-full px-2 py-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white" on:click={handleLogOut}>
                             Log out
                         </button>
+                    </div>
+                    <div>
+                        <div class="w-full flex justify-center px-2 pt-2 pb-4 hover:cursor-pointer text-base hover:bg-red-600 hover:text-white rounded-b-lg" on:click={handleRemoveUser} on:keypress="{()=>{}}">
+                            Delete user
+                        </div>
                     </div>
                 </div>
             </div>
