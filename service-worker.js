@@ -1,26 +1,26 @@
 const i = [
-  "/_app/immutable/entry/app.8cdf2ed9.js",
+  "/_app/immutable/entry/app.6fc52e44.js",
   "/_app/immutable/chunks/0.3433fde9.js",
-  "/_app/immutable/chunks/1.6a8c9d04.js",
-  "/_app/immutable/chunks/2.7fe0f5e6.js",
-  "/_app/immutable/chunks/3.26d3decd.js",
-  "/_app/immutable/chunks/4.7f969f3f.js",
+  "/_app/immutable/chunks/1.983df21d.js",
+  "/_app/immutable/chunks/2.21c5355f.js",
+  "/_app/immutable/chunks/3.e1f25a51.js",
+  "/_app/immutable/chunks/4.abb68a11.js",
   "/_app/immutable/chunks/_layout.73540493.js",
   "/_app/immutable/chunks/index.a5c23e87.js",
-  "/_app/immutable/chunks/paths.f78a2daf.js",
+  "/_app/immutable/chunks/paths.5f6615a7.js",
   "/_app/immutable/chunks/preload-helper.41c905a7.js",
-  "/_app/immutable/chunks/singletons.2e4972d0.js",
-  "/_app/immutable/assets/app.ffd536f2.css",
-  "/_app/immutable/entry/start.fb84917d.js",
-  "/_app/immutable/entry/error.svelte.1300769d.js",
+  "/_app/immutable/chunks/singletons.8c34b9e9.js",
+  "/_app/immutable/assets/app.def24908.css",
+  "/_app/immutable/entry/start.25f4085a.js",
+  "/_app/immutable/entry/error.svelte.b5d7f60d.js",
   "/_app/immutable/entry/layout.svelte.9d08ff59.js",
   "/_app/immutable/chunks/worker.a658c318.js",
   "/_app/immutable/entry/_layout.js.50a6b084.js",
   "/_app/immutable/assets/_page.316af8a7.css",
-  "/_app/immutable/entry/_page.svelte.e18fc36e.js",
+  "/_app/immutable/entry/_page.svelte.04880e57.js",
   "/_app/immutable/assets/_page.76340e48.css",
-  "/_app/immutable/entry/about-page.svelte.56d38037.js",
-  "/_app/immutable/entry/cookies-page.svelte.26653a0f.js"
+  "/_app/immutable/entry/about-page.svelte.63730fd0.js",
+  "/_app/immutable/entry/cookies-page.svelte.b030137c.js"
 ], l = [
   "/.nojekyll",
   "/android-chrome-192x192.png",
@@ -40,7 +40,7 @@ const i = [
   "/mstile-310x310.png",
   "/mstile-70x70.png",
   "/safari-pinned-tab.svg"
-], u = "1682805541359", t = `cache-${u}`, p = [
+], u = "1682808688585", t = `cache-${u}`, p = [
   ...i,
   // the app itself
   ...l
