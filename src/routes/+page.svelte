@@ -434,8 +434,12 @@
                 await importSessionState(obj);
                 successMessage = "Application data imported successfully.";    
             } else if (isUserState(obj)) {
-                await importUserState(obj);
-                successMessage = "User data imported successfully.";
+                const imported = await importUserState(obj);
+                if (imported) {
+                    successMessage = "User data imported successfully.";
+                } else {
+                    errorMessage = "User already exists.";
+                }
             } else if (isSettings(obj)) {
                 if (loggedIn) {
                     await importSettings(obj);
@@ -516,9 +520,9 @@
         }));
     }
 
-    async function importUserState(user: UserState): Promise<void> {
+    async function importUserState(user: UserState): Promise<Boolean> {
         const userDB = await db.users.where("username").equals(user.username).toArray();
-        if (userDB.length !== 0) return;
+        if (userDB.length !== 0) return false;
         const settingsID = await db.settings.add(user.settings) as Key;
         const userID = await db.users.add({
             username: user.username,
@@ -527,6 +531,7 @@
         await Promise.all(user.emails.map((email) => {
             importEmailState(email, userID);
         }));
+        return true;
     }
 
     async function importEmailState(email: EmailState, userID: Key): Promise<void> {
